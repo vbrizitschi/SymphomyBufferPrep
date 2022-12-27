@@ -1,0 +1,8 @@
+<div layout="row"       layout-align="center center">
+
+<div (click)="uploadFile.click()">
+      <button mat-raised-button color="primary">Выберите файл шаблона</button>
+      <input #uploadFile (change)="upload($event)" type='file' style="display:none"/>
+ </div>
+
+</div>

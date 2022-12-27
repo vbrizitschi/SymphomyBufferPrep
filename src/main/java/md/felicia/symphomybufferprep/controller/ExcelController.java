@@ -17,6 +17,7 @@ import java.util.Calendar;
 import java.util.List;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/documents")
 public class ExcelController {
     @Autowired
