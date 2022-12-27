@@ -53,12 +53,20 @@ public class ExcelController {
 
 
         for (BufferRow bufferRow: bufferRowList){
-            System.out.println(bufferRow);
+           // System.out.println(bufferRow);
             writer.append(bufferRow.toString());
             writer.append("\n");
        }
 
         writer.close();
+
+        Runtime runtime = Runtime.getRuntime();
+
+        try {
+            runtime.exec("cmd /c start "+ env.getProperty("bufferPrep.output-folder") +"\\"+ env.getProperty("bufferPrep.bat-file-name"));
+        }catch (IOException ioException){
+            throw new RuntimeException(ioException);
+        }
 
         return "Success";
     }
