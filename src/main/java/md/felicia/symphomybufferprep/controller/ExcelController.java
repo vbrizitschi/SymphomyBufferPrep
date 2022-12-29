@@ -64,7 +64,7 @@ public class ExcelController {
         Runtime runtime = Runtime.getRuntime();
 
         try {
-            runtime.exec("cmd /c start "+ env.getProperty("bufferPrep.output-folder") +"\\"+ env.getProperty("bufferPrep.bat-file-name"));
+            runtime.exec("cmd /c start "+  env.getProperty("bufferPrep.bat-file-name"));
         }catch (IOException ioException){
             throw new RuntimeException(ioException);
         }

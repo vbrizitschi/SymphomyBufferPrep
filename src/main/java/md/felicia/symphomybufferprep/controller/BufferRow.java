@@ -91,7 +91,7 @@ public class BufferRow {
         String date = new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime());
 
         return "Buffer_" + date +
-                "|" + name +
+          //      "|" + name +
                 "|" + stockLocation +
                 "|" + skuName +
                 "|" + assortmentGroup +
