@@ -17,6 +17,7 @@ import {MatTooltipModule} from "@angular/material/tooltip";
 import { LoadBufferComponent } from './components/buffer/load-buffer/load-buffer.component';
 import { AppRoutingModule } from './app-routing.module';
 import {HttpClientModule} from "@angular/common/http";
+import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 
 @NgModule({
   declarations: [
@@ -24,23 +25,24 @@ import {HttpClientModule} from "@angular/common/http";
     MainMenuComponent,
     LoadBufferComponent
   ],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    FormsModule,
-    MatButtonModule,
-    MatSidenavModule,
-    MatMenuModule,
-    MatToolbarModule,
-    MatIconModule,
-    MatListModule,
-    RouterModule,
-    MatExpansionModule,
-    MatTooltipModule,
-    RouterModule.forRoot([]),
-    AppRoutingModule,
-    HttpClientModule
-  ],
+    imports: [
+        BrowserModule,
+        BrowserAnimationsModule,
+        FormsModule,
+        MatButtonModule,
+        MatSidenavModule,
+        MatMenuModule,
+        MatToolbarModule,
+        MatIconModule,
+        MatListModule,
+        RouterModule,
+        MatExpansionModule,
+        MatTooltipModule,
+        RouterModule.forRoot([]),
+        AppRoutingModule,
+        HttpClientModule,
+        MatProgressSpinnerModule
+    ],
   providers: [],
   bootstrap: [AppComponent]
 })

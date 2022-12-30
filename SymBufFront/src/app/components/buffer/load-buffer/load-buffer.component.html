@@ -1,8 +1,18 @@
 <div layout="row"       layout-align="center center">
-
+<p>
+  Правила пользования:
+  <ul>
+    <li>Файл должен быть в формате xlsx </li>
+    <li>Лист для загрузки должен быть первым в файле</li>
+    <li>Формат файла должен на 100% соответствовать шаблону</li>
+    <li>Файл не должен содержать дубликатов строк</li>
+  </ul>
+<p></p>
 <div (click)="uploadFile.click()">
       <button mat-raised-button color="primary">Выберите файл шаблона</button>
       <input #uploadFile (change)="upload($event)" type='file' style="display:none"/>
+      <mat-spinner *ngIf="isLoading"></mat-spinner>
  </div>
+
 
 </div>

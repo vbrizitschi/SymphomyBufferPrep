@@ -7,7 +7,7 @@ import {Observable} from "rxjs";
 })
 export class FileService {
 
-  private baseUrl: string = 'http://localhost:8080/api/documents/re-build-file'
+  private baseUrl: string = 'http://symphonyserver:8080/api/documents/re-build-file'
 
   constructor(private http: HttpClient) { }
 
