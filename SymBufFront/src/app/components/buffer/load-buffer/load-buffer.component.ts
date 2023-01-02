@@ -22,5 +22,6 @@ export class LoadBufferComponent {
     }, error => {
       this.isLoading = false;
     })
+
   }
 }

@@ -18,12 +18,15 @@ import { LoadBufferComponent } from './components/buffer/load-buffer/load-buffer
 import { AppRoutingModule } from './app-routing.module';
 import {HttpClientModule} from "@angular/common/http";
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
+import { CalculationLogsComponent } from './components/logs/calculation-logs/calculation-logs.component';
+import {MatTableModule} from "@angular/material/table";
 
 @NgModule({
   declarations: [
     AppComponent,
     MainMenuComponent,
-    LoadBufferComponent
+    LoadBufferComponent,
+    CalculationLogsComponent
   ],
     imports: [
         BrowserModule,
@@ -41,7 +44,8 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
         RouterModule.forRoot([]),
         AppRoutingModule,
         HttpClientModule,
-        MatProgressSpinnerModule
+        MatProgressSpinnerModule,
+        MatTableModule
     ],
   providers: [],
   bootstrap: [AppComponent]

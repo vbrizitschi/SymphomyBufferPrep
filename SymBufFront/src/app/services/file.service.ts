@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {Observable} from "rxjs";
+import {Observable, Subject} from "rxjs";
+import {environment} from "../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FileService {
 
-  private baseUrl: string = 'http://symphonyserver:8080/api/documents/re-build-file'
+  private baseUrl: string = `${environment.baseUrl}/documents/re-build-file`;
 
   constructor(private http: HttpClient) { }
 
@@ -16,4 +17,5 @@ export class FileService {
     formData.append('file',file);
     return this.http.post(this.baseUrl, formData);
   }
+
 }
