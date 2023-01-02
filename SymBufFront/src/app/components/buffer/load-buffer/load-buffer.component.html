@@ -8,11 +8,11 @@
     <li>Файл не должен содержать дубликатов строк</li>
   </ul>
 <p></p>
-<div (click)="uploadFile.click()">
+<div (click)="uploadFile.click()" *ngIf="!isLoading">
       <button mat-raised-button color="primary">Выберите файл шаблона</button>
       <input #uploadFile (change)="upload($event)" type='file' style="display:none"/>
-      <mat-spinner *ngIf="isLoading"></mat-spinner>
+
  </div>
-
-
+  <mat-spinner *ngIf="isLoading"></mat-spinner>
+  <div> <h2>Status: </h2> {{status}} </div>
 </div>
