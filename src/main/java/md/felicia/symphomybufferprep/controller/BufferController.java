@@ -48,16 +48,16 @@ public class BufferController {
 
             log.info("Writing to Symphony file finished ");
 
-            Runtime runtime = Runtime.getRuntime();
-
-            String batFile = env.getProperty("bufferPrep.bat-file-name");
-
-            try {
-                log.info("Try to call bat file: " + batFile);
-                runtime.exec("cmd /c start "+ batFile);
-            }catch (IOException ioException){
-                throw new RuntimeException(ioException);
-            }
+//            Runtime runtime = Runtime.getRuntime();
+//
+//            String batFile = env.getProperty("bufferPrep.bat-file-name");
+//
+//            try {
+//                log.info("Try to call bat file: " + batFile);
+//                runtime.exec("cmd /c start "+ batFile);
+//            }catch (IOException ioException){
+//                throw new RuntimeException(ioException);
+//            }
 
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }

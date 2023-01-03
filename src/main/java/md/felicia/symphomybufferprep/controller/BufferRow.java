@@ -8,7 +8,6 @@ import java.util.Calendar;
 public class BufferRow {
     private String name ; //Name(SYM) 0
     private String stockLocation; //Stock Location Name(SYM) 1
-
     private String skuName;
     private String assortmentGroup; //Assortment group(SYM) 2
     private String eventSym; //Type(Event) (SYM) 3
