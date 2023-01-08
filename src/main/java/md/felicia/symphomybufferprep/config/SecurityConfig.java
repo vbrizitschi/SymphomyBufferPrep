@@ -1,50 +1,60 @@
 package md.felicia.symphomybufferprep.config;
 
+import md.felicia.symphomybufferprep.security.JwtAuthenticationEntryPoint;
+import md.felicia.symphomybufferprep.security.LoginAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.ldap.core.DirContextOperations;
-import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.ldap.core.support.LdapContextSource;
-import org.springframework.security.access.expression.SecurityExpressionOperations;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.core.GrantedAuthorityDefaults;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
-import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
-import org.springframework.security.web.FilterInvocation;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
-import org.springframework.security.web.access.expression.WebSecurityExpressionRoot;
-
-
-import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 
 @EnableWebSecurity
 @Configuration
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig  {
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-                .authorizeRequests()
-                .anyRequest().fullyAuthenticated()
+    private final UserDetailsService userDetailsService;
+
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final AuthenticationConfiguration authenticationConfiguration;
+
+   @Autowired
+    public SecurityConfig(UserDetailsService userDetailsService, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, AuthenticationConfiguration authenticationConfiguration) {
+        this.userDetailsService = userDetailsService;
+       this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+       this.authenticationConfiguration = authenticationConfiguration;
+   }
+
+    @Bean
+    protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
+        AuthenticationManager authenticationManager = http.getSharedObject(AuthenticationManager.class);
+        http = http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+
+//       http = http.exceptionHandling().authenticationEntryPoint((request, response, authException) -> {
+//            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid Token");
+//        }).and();
+
+        http    .csrf()
+                    .disable()
+                .cors()
+                    .disable()
+                .exceptionHandling()
+                    .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 .and()
-                .formLogin();
+                .authorizeRequests().antMatchers("/api/auth/**").permitAll()
+                // .antMatchers("/api/logs/**").access("hasAuthority('SymphonyLogsCalculation')")
+                .anyRequest().authenticated()
+        .and()
+                .addFilter(new LoginAuthenticationFilter(authenticationManager()));
+            http.authenticationProvider(activeDirectoryLdapAuthenticationProvider());
+        return http.build();
     }
 
     @Bean
@@ -53,18 +63,29 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         ActiveDirectoryLdapAuthenticationProvider activeDirectoryLdapAuthenticationProvider =
                 new ActiveDirectoryLdapAuthenticationProvider( "felicia.local", "ldap://batman.felicia.local","dc=felicia,dc=local");
 
-        // to parse AD failed credentails error message due to account - expiry,lock, credentialis - expiry,lock
         activeDirectoryLdapAuthenticationProvider.setConvertSubErrorCodesToExceptions(true);
         activeDirectoryLdapAuthenticationProvider.setUseAuthenticationRequestCredentials(true);
         activeDirectoryLdapAuthenticationProvider.setSearchFilter("(&(objectClass=user)(sAMAccountName={1}))");
+
+
         return activeDirectoryLdapAuthenticationProvider;
     }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(activeDirectoryLdapAuthenticationProvider());
+    @Bean
+    public AuthenticationManager authenticationManager() throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 
+
+//    @Bean
+//    public LoginAuthenticationFilter loginFilter() {
+//        return new LoginAuthenticationFilter(this.authenticationManager(a);
+//    }
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(activeDirectoryLdapAuthenticationProvider())
+                .userDetailsService(userDetailsService)
+        ;
+    }
 
 }
 
