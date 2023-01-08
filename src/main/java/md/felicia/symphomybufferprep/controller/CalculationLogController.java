@@ -20,6 +20,7 @@ public class CalculationLogController {
 
     private final CalculationLogRowRepository calculationLogRowRepository;
 
+    @Autowired
     public CalculationLogController(CalculationLogRowRepository calculationLogRowRepository) {
         this.calculationLogRowRepository = calculationLogRowRepository;
     }
