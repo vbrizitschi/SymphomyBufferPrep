@@ -50,7 +50,7 @@ public class SecurityConfig  {
     @Bean
     protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
 
-        http = http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+       http = http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
 
        http = http.exceptionHandling().authenticationEntryPoint((request, response, authException) -> {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid Token");
