@@ -1,4 +1,4 @@
-package md.felicia.symphomybufferprep.controller;
+package md.felicia.symphomybufferprep.entity;
 
 import lombok.Data;
 import java.text.SimpleDateFormat;
@@ -40,7 +40,7 @@ public class BufferRow {
     private Double reportedMonth; //Reported month(SYM) //26
     private Double reportedDay; //Reported day(SYM) //27
 
-    BufferRow(){};
+    public BufferRow(){};
 
     @Override
     public String toString() {

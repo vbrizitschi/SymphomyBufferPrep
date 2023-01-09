@@ -16,9 +16,7 @@ import java.util.List;
 @RequestMapping("/api/logs")
 @Slf4j
 public class CalculationLogController {
-
     private final CalculationLogRowRepository calculationLogRowRepository;
-
     @Autowired
     public CalculationLogController(CalculationLogRowRepository calculationLogRowRepository) {
         this.calculationLogRowRepository = calculationLogRowRepository;
