@@ -3,6 +3,7 @@ package md.felicia.symphomybufferprep.config;
 import md.felicia.symphomybufferprep.security.JWTFilter;
 import md.felicia.symphomybufferprep.security.JwtAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,6 +23,15 @@ import javax.servlet.http.HttpServletResponse;
 @Configuration
 public class SecurityConfig  {
 
+    @Value("${ad.ldap.server-address}")
+    private String AD_LDAP_URL_SERVER;
+    @Value("${ad.root-dn}")
+    private String AD_ROOT_DN;
+    @Value("${ad.search-filter}")
+    private String AD_SEARCH_FILTER;
+    @Value("${ad.domain}")
+    private String AD_DOMAIN;
+
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final AuthenticationConfiguration authenticationConfiguration;
 
@@ -36,7 +46,7 @@ public class SecurityConfig  {
 
         http = http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
 
-       http = http.exceptionHandling().authenticationEntryPoint((request, response, authException) -> {
+        http = http.exceptionHandling().authenticationEntryPoint((request, response, authException) -> {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid Token");
         }).and();
 
@@ -60,11 +70,11 @@ public class SecurityConfig  {
     public AuthenticationProvider activeDirectoryLdapAuthenticationProvider() {
 
         ActiveDirectoryLdapAuthenticationProvider activeDirectoryLdapAuthenticationProvider =
-                new ActiveDirectoryLdapAuthenticationProvider( "felicia.local", "ldap://batman.felicia.local","dc=felicia,dc=local");
+                new ActiveDirectoryLdapAuthenticationProvider( AD_DOMAIN, AD_LDAP_URL_SERVER,AD_ROOT_DN);
 
         activeDirectoryLdapAuthenticationProvider.setConvertSubErrorCodesToExceptions(true);
         activeDirectoryLdapAuthenticationProvider.setUseAuthenticationRequestCredentials(true);
-        activeDirectoryLdapAuthenticationProvider.setSearchFilter("(&(objectClass=user)(sAMAccountName={1}))");
+        activeDirectoryLdapAuthenticationProvider.setSearchFilter(AD_SEARCH_FILTER);
 
         return activeDirectoryLdapAuthenticationProvider;
     }
