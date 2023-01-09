@@ -1,6 +1,8 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormControl, FormGroup} from "@angular/forms";
 import {LoginService} from "../../../services/login.service";
+import {StorageService} from "../../../services/storage.service";
+import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
   selector: 'app-login-form',
@@ -12,19 +14,25 @@ export class LoginFormComponent {
     username: new FormControl(''),
     password: new FormControl(''),
   });
+  returnUrl: string = '';
 
-  constructor(private loginService: LoginService) {
+  constructor(private loginService: LoginService,
+              private storageService: StorageService,
+              private router: Router,
+              private route: ActivatedRoute) {
   }
 
   submit() {
     if (this.form.valid) {
       // this.submitEM.emit(this.form.value);
       this.loginService.login({login: this.form.get('username')?.value, password: this.form.get('password')?.value}).subscribe(data => {
-        console.log('Auth result: ', data);
+        this.storageService.addItem('token', data.jwtToken);
+        console.log('route', this.route);
+        this.route.queryParams.subscribe(params => {
+          this.returnUrl = params['returnUrl'];
+        })
+        this.router.navigate([this.returnUrl]);
       })
     }
   }
-  @Input() error: string | null = '';
-
-  @Output() submitEM = new EventEmitter();
 }

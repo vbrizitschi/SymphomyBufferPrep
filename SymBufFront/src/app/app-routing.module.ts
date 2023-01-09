@@ -4,10 +4,11 @@ import {LoadBufferComponent} from "./components/buffer/load-buffer/load-buffer.c
 import {RouterModule, Routes} from "@angular/router";
 import {CalculationLogsComponent} from "./components/logs/calculation-logs/calculation-logs.component";
 import {LoginFormComponent} from "./components/auth/login-form/login-form.component";
+import {AuthGuard} from "./components/auth/auth.guard";
 
 const routes: Routes = [
-  { path: 'load-buffer', component: LoadBufferComponent },
-  { path: 'calculation-logs', component: CalculationLogsComponent},
+  { path: 'load-buffer', component: LoadBufferComponent, canActivate: [AuthGuard] },
+  { path: 'calculation-logs', component: CalculationLogsComponent, canActivate: [AuthGuard]},
   { path: 'login', component: LoginFormComponent}
 ];
 

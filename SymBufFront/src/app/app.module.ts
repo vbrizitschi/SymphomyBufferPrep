@@ -16,13 +16,15 @@ import {RouterModule} from "@angular/router";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import { LoadBufferComponent } from './components/buffer/load-buffer/load-buffer.component';
 import { AppRoutingModule } from './app-routing.module';
-import {HttpClientModule} from "@angular/common/http";
+import {HTTP_INTERCEPTORS, HttpClientModule} from "@angular/common/http";
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import { CalculationLogsComponent } from './components/logs/calculation-logs/calculation-logs.component';
 import {MatTableModule} from "@angular/material/table";
 import { LoginFormComponent } from './components/auth/login-form/login-form.component';
 import {MatInputModule} from "@angular/material/input";
 import {MatCardModule} from "@angular/material/card";
+import {AuthInterceptor} from "./interceptors/auth.interceptor";
+import {JWT_OPTIONS, JwtHelperService, JwtModule} from "@auth0/angular-jwt";
 
 @NgModule({
   declarations: [
@@ -54,7 +56,15 @@ import {MatCardModule} from "@angular/material/card";
     ReactiveFormsModule,
     MatCardModule
   ],
-  providers: [],
+  providers: [{
+    provide: HTTP_INTERCEPTORS,
+    useClass: AuthInterceptor,
+    multi: true
+  },
+    {provide: JWT_OPTIONS,
+      useValue: JWT_OPTIONS
+
+    }, JwtHelperService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

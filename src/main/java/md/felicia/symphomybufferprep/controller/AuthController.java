@@ -36,7 +36,7 @@ public class AuthController {
 
          String token = jwtUtil.generateToken(authentication);
 
-        return new ResponseEntity<>(Map.of("jwt-token", token), HttpStatus.OK);
+        return new ResponseEntity<>(Map.of("jwtToken", token), HttpStatus.OK);
     }
 
 }
