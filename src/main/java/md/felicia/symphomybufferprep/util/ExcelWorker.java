@@ -1,6 +1,8 @@
-package md.felicia.symphomybufferprep.controller;
+package md.felicia.symphomybufferprep.util;
 
 import lombok.extern.slf4j.Slf4j;
+
+import md.felicia.symphomybufferprep.entity.BufferRow;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFRow;
