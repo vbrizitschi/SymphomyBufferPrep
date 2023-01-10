@@ -20,7 +20,7 @@ import java.util.Calendar;
 import java.util.List;
 
 @RestController
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials="true")
 @RequestMapping("/api/documents")
 @Slf4j
 public class BufferController {
