@@ -15,6 +15,7 @@ export class LoginFormComponent {
     password: new FormControl(''),
   });
   returnUrl: string = '';
+  error: string = '';
 
   constructor(private loginService: LoginService,
               private storageService: StorageService,
@@ -24,14 +25,16 @@ export class LoginFormComponent {
 
   submit() {
     if (this.form.valid) {
-      // this.submitEM.emit(this.form.value);
       this.loginService.login({login: this.form.get('username')?.value, password: this.form.get('password')?.value}).subscribe(data => {
         this.storageService.addItem('token', data.jwtToken);
-        console.log('route', this.route);
         this.route.queryParams.subscribe(params => {
           this.returnUrl = params['returnUrl'];
         })
         this.router.navigate([this.returnUrl]);
+      }, err => {
+        console.error('Login error: ', err)
+        this.error = err;
+        this.error = 'Authentication error!';
       })
     }
   }
