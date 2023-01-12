@@ -6,6 +6,7 @@ import md.felicia.symphomybufferprep.service.BufferService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
@@ -69,7 +70,8 @@ public class BufferController {
 
     @RequestMapping(value = "/download-template", method = RequestMethod.GET)
     public ResponseEntity<?> downloadTemplate(@RequestParam("doc_name") String doc_name) throws IOException {
-        File file = ResourceUtils.getFile(doc_name);
+
+        File file =  new ClassPathResource("templates/"+ doc_name).getFile();
 
         HttpHeaders header = new HttpHeaders();
         header.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+doc_name);
@@ -83,7 +85,7 @@ public class BufferController {
         return ResponseEntity.ok()
                 .headers(header)
                 .contentLength(file.length())
-                .contentType(MediaType.parseMediaType("application/octet-stream"))
+                .contentType(MediaType.parseMediaType("application/excel"))
                 .body(resource);
     }
 
