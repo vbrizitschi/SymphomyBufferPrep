@@ -7,8 +7,11 @@
     <li>Формат файла должен на 100% соответствовать шаблону</li>
     <li>Файл не должен содержать дубликатов строк</li>
   </ul>
+  <button mat-raised-button color="primary" (click)="downloadFile()">Скачать файл шаблона</button>
 <p></p>
 <div (click)="uploadFile.click()" *ngIf="!isLoading">
+
+
       <button mat-raised-button color="primary">Выберите файл шаблона</button>
       <input #uploadFile (change)="upload($event)" type='file' style="display:none"/>
 

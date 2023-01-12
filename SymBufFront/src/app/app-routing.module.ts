@@ -5,11 +5,13 @@ import {RouterModule, Routes} from "@angular/router";
 import {CalculationLogsComponent} from "./components/logs/calculation-logs/calculation-logs.component";
 import {LoginFormComponent} from "./components/auth/login-form/login-form.component";
 import {AuthGuard} from "./components/auth/auth.guard";
+import {StocklocationsComponent} from "./components/refs/stocklocations/stocklocations.component";
 
 const routes: Routes = [
   { path: 'load-buffer', component: LoadBufferComponent, canActivate: [AuthGuard] },
   { path: 'calculation-logs', component: CalculationLogsComponent, canActivate: [AuthGuard]},
-  { path: 'login', component: LoginFormComponent}
+  { path: 'login', component: LoginFormComponent},
+  { path: 'stocklocations', component: StocklocationsComponent}
 ];
 
 @NgModule({

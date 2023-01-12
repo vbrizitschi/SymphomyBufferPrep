@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import {FileService} from "../../../services/file.service";
+import {saveAs} from 'file-saver';
 
 @Component({
   selector: 'app-load-buffer',
@@ -23,5 +24,17 @@ export class LoadBufferComponent {
       this.isLoading = false;
     })
 
+  }
+
+  downloadFile() {
+      this.fileService.downloadFile('load_buffer.xlsx').subscribe(data => {
+        console.log('data', data)
+        this.saveToFileSystem(data, 'buffer-template.xlsx');
+      })
+  }
+
+  private saveToFileSystem(response: any, docName: string) {
+    const blob = new Blob([response]);
+    saveAs(blob, docName);
   }
 }

@@ -1,0 +1,51 @@
+<!--<div class="mat-form-group">-->
+<!--  <mat-form-field>-->
+<!--    <mat-label>Filter</mat-label>-->
+<!--    <input matInput (keyup)="applyFilter($event)" placeholder="ex. F1" #input>-->
+
+<!--    <button mat-stroked-button (click)="hideDeleted()">Hide deleted</button>-->
+<!--  </mat-form-field>-->
+
+<!--&lt;!&ndash;  <mat-form-field  floatLabel="always" appearance="fill">&ndash;&gt;-->
+
+<!--&lt;!&ndash;    <textarea matInput hidden></textarea>&ndash;&gt;-->
+<!--&lt;!&ndash;  </mat-form-field>&ndash;&gt;-->
+<!--</div>-->
+
+  <mat-form-field appearance="fill">
+        <mat-label>Filter</mat-label>
+        <input matInput (keyup)="applyFilter($event)" placeholder="ex. F1" #input>
+    <mat-checkbox class="checkbox-inside" (click)="doHideDeleted()">Hide deleted</mat-checkbox>
+  </mat-form-field>
+
+
+<table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+  <ng-container matColumnDef="stockLocationID">
+    <th mat-header-cell *matHeaderCellDef> ID </th>
+    <td mat-cell *matCellDef="let element"> {{element.stockLocationID}} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="stockLocationName">
+    <th mat-header-cell *matHeaderCellDef> SL Code </th>
+    <td mat-cell *matCellDef="let element"> {{element.stockLocationName}} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="stockLocationDescription">
+    <th mat-header-cell *matHeaderCellDef> Name </th>
+    <td mat-cell *matCellDef="let element"> {{element.stockLocationDescription}} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="deleted">
+    <th mat-header-cell *matHeaderCellDef> Deleted </th>
+    <td mat-cell *matCellDef="let element"> {{element.deleted}} </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" ></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+  <tr class="mat-row" *matNoDataRow>
+    <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
+  </tr>
+
+</table>

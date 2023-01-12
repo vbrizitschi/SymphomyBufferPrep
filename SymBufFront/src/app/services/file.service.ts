@@ -18,4 +18,8 @@ export class FileService {
     return this.http.post(this.baseUrl, formData);
   }
 
+  downloadFile(templateName: string) {
+    return this.http.get(`${environment.baseUrl}/documents/download-template?doc_name=${templateName}`, {responseType: 'blob'});
+
+  }
 }

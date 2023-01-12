@@ -47,6 +47,10 @@
             <!--            <mat-icon>android</mat-icon>-->
             <span>Загрузить серые зоны</span>
           </a>
+          <a mat-list-item routerLink="#">
+            <!--            <mat-icon>android</mat-icon>-->
+            <span>Удалить лишние SL</span>
+          </a>
         </mat-nav-list>
       </mat-expansion-panel>
       <mat-expansion-panel [class.mat-elevation-z0]="true">
@@ -55,7 +59,7 @@
         </mat-expansion-panel-header>
         <mat-nav-list>
           <a mat-list-item routerLink="#">Номенклатура</a>
-          <a mat-list-item routerLink="#">Филиалы</a>
+          <a mat-list-item routerLink="/stocklocations">Филиалы</a>
           <a mat-list-item routerLink="#">В разработке....</a>
         </mat-nav-list>
       </mat-expansion-panel>
@@ -72,12 +76,12 @@
     </mat-nav-list>
   </mat-sidenav>
   <mat-sidenav-content>
-    <div class="app-sidenav-content">
+<!--    <div class="app-sidenav-content">-->
     <router-outlet>
 <!--      <div class="app-sidenav-content">-->
 <!--        Components open here-->
 <!--      </div>-->
     </router-outlet>
-    </div>
+<!--    </div>-->
   </mat-sidenav-content>
 </mat-sidenav-container>

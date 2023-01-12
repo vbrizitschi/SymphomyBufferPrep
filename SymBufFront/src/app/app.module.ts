@@ -25,6 +25,10 @@ import {MatInputModule} from "@angular/material/input";
 import {MatCardModule} from "@angular/material/card";
 import {AuthInterceptor} from "./interceptors/auth.interceptor";
 import {JWT_OPTIONS, JwtHelperService, JwtModule} from "@auth0/angular-jwt";
+import { StocklocationsComponent } from './components/refs/stocklocations/stocklocations.component';
+import {MatButtonToggleModule} from "@angular/material/button-toggle";
+import {MatSlideToggleModule} from "@angular/material/slide-toggle";
+import {MatCheckboxModule} from "@angular/material/checkbox";
 
 @NgModule({
   declarations: [
@@ -32,7 +36,8 @@ import {JWT_OPTIONS, JwtHelperService, JwtModule} from "@auth0/angular-jwt";
     MainMenuComponent,
     LoadBufferComponent,
     CalculationLogsComponent,
-    LoginFormComponent
+    LoginFormComponent,
+    StocklocationsComponent
   ],
   imports: [
     BrowserModule,
@@ -54,7 +59,10 @@ import {JWT_OPTIONS, JwtHelperService, JwtModule} from "@auth0/angular-jwt";
     MatTableModule,
     MatInputModule,
     ReactiveFormsModule,
-    MatCardModule
+    MatCardModule,
+    MatButtonToggleModule,
+    MatSlideToggleModule,
+    MatCheckboxModule
   ],
   providers: [{
     provide: HTTP_INTERCEPTORS,

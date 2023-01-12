@@ -1,0 +1,16 @@
+
+.mat-mdc-form-field {
+  font-size: 14px;
+  width: 100%;
+}
+
+.mat-form-group mat-form-field + mat-form-field {
+  margin-left: 8px;
+}
+.text-invisible {
+  opacity: 0;
+}
+
+.checkbox-inside {
+  align-content: end;
+}
