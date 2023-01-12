@@ -1,9 +1,12 @@
 package md.felicia.symphomybufferprep.entity;
 
+import lombok.Data;
+
 import javax.persistence.*;
 
 @Entity
 @Table(name = "Symphony_StockLocationSkus", catalog = "SymRun_Felicia", schema = "dbo")
+@Data
 public class StockLocationSku {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

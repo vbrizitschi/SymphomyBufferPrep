@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -26,17 +27,24 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?>authUser(@RequestBody AuthenticationDTO authenticationDTO){
+    public Map<String, Object>authUser(@RequestBody AuthenticationDTO authenticationDTO){
+
+        Authentication authentication;
+
         if(authenticationDTO.getLogin().isEmpty()||authenticationDTO.getPassword().isEmpty()){
-            return new ResponseEntity<>("Username or Password should not be empty", HttpStatus.BAD_REQUEST);
+            return Map.of("Username or Password should not be empty", HttpStatus.BAD_REQUEST);
         }
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authenticationDTO.getLogin(), authenticationDTO.getPassword()));
+       // try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authenticationDTO.getLogin(), authenticationDTO.getPassword()));
+       // }catch (BadCredentialsException e){
+         //   return Map.of("message", e.getMessage());
+       // }
 
          String token = jwtUtil.generateToken(authentication);
 
-        return new ResponseEntity<>(Map.of("jwtToken", token), HttpStatus.OK);
+        return  Map.of("jwtToken", token);
     }
 
 }
