@@ -2,6 +2,7 @@ package md.felicia.symphomybufferprep.util;
 
 import lombok.extern.slf4j.Slf4j;
 
+import md.felicia.symphomybufferprep.DTO.MinBufferDTO;
 import md.felicia.symphomybufferprep.entity.BufferRow;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -11,9 +12,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 public class ExcelWorker {
@@ -33,11 +32,8 @@ public class ExcelWorker {
                 BufferRow bufferRow = new BufferRow();
 
                 XSSFRow row = sheet.getRow(i);
-                Iterator<Cell> cellIterator =  row.iterator();
 
-                while (cellIterator.hasNext()){
-
-                    Cell currentCell = cellIterator.next();
+                for (Cell currentCell : row) {
 
                     switch (currentCell.getAddress().getColumn()) {
                         case 0 -> bufferRow.setName(dataFormatter.formatCellValue(currentCell));
@@ -87,4 +83,42 @@ public class ExcelWorker {
             throw new RuntimeException(e);
         }
     }
+
+    public static Set<MinBufferDTO> excelToMinBufferSet(InputStream inputStream){
+        Set<MinBufferDTO> minBufferDTOs = new HashSet<>();
+
+        DataFormatter dataFormatter = new DataFormatter();
+        try{
+            XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
+            log.info("Try to read first sheet from workbook");
+            XSSFSheet sheet = workbook.getSheetAt(0);  //only one worksheet
+
+            log.info("Processing lines in sheet");
+
+            for(int i = 1; i < sheet.getPhysicalNumberOfRows(); i++){
+                MinBufferDTO  minBufferDTO = new MinBufferDTO();
+                XSSFRow row = sheet.getRow(i);
+
+                for (Cell currentCell : row) {
+                    switch (currentCell.getAddress().getColumn()) {
+                        case 0 -> minBufferDTO.setStockLocation(dataFormatter.formatCellValue(currentCell));
+                        case 1 -> minBufferDTO.setSKUName(dataFormatter.formatCellValue(currentCell));
+                        case 2 -> minBufferDTO.setMinBufferSize((int) currentCell.getNumericCellValue());
+                        default -> {
+                        }
+                    }
+                }
+
+                minBufferDTOs.add(minBufferDTO);
+            }
+            workbook.close();
+
+            log.info("Excel file processed successful");
+           return minBufferDTOs;
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

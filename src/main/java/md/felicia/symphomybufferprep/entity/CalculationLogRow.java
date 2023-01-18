@@ -9,7 +9,7 @@ import javax.persistence.Table;
 import java.sql.Date;
 
 @Entity
-@Table(name = "calculation_logs")
+@Table(name = "calculation_logs", catalog ="Farma",schema = "dbo")
 @Data
 public class CalculationLogRow {
     @Id

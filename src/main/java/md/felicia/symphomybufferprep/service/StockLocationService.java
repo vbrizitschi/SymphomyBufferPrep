@@ -10,7 +10,7 @@ import java.util.List;
 @Service
 public class StockLocationService {
 
-    private StockLocationRepository stockLocationRepository;
+    private final StockLocationRepository stockLocationRepository;
 
     @Autowired
     public StockLocationService(StockLocationRepository stockLocationRepository) {
