@@ -1,12 +1,12 @@
 package md.felicia.symphomybufferprep.controller;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import md.felicia.symphomybufferprep.DTO.MinBufferDTO;
 import md.felicia.symphomybufferprep.DTO.MinOutputBufferDTO;
 import md.felicia.symphomybufferprep.entity.AllMtsSkus;
 import md.felicia.symphomybufferprep.entity.BufferRow;
 import md.felicia.symphomybufferprep.repository.AllMtsSkusMinBufferRepository;
+import md.felicia.symphomybufferprep.repository.SymphonyFileStructureRepository;
 import md.felicia.symphomybufferprep.service.AllMtsSkusMinBufferService;
 import md.felicia.symphomybufferprep.service.BufferService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
-
+import javax.transaction.Transactional;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,16 +39,18 @@ public class BufferController {
 
     private final Environment env;
     private final BufferService bufferService;
-
     private final AllMtsSkusMinBufferService allMtsSkusMinBufferService;
+
+    private final SymphonyFileStructureRepository symphonyFileStructureRepository;
 
     @Autowired
     public BufferController(Environment env, BufferService bufferService, AllMtsSkusMinBufferService allMtsSkusMinBufferService,
-                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository) {
+                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository, SymphonyFileStructureRepository symphonyFileStructureRepository) {
         this.env = env;
         this.bufferService = bufferService;
         this.allMtsSkusMinBufferService = allMtsSkusMinBufferService;
         this.allMtsSkusMinBufferRepository = allMtsSkusMinBufferRepository;
+        this.symphonyFileStructureRepository = symphonyFileStructureRepository;
     }
 
     @RequestMapping(value = "/re-build-file", method = RequestMethod.POST)
@@ -85,8 +87,11 @@ public class BufferController {
     }
 
     @RequestMapping(value = "/rebuild-min-buffer", method = RequestMethod.POST)
+    @Transactional
     public ResponseEntity<?> rebuildMinBuffer(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
-        final String Catalog = "CATALOG";
+        final String catalog = "CATALOG";
+        final String symphonyFileName = "MTSSKUS";
+        final String symphonyFieldName = "MINIMUMBUFFERSIZE";
 
         Set<MinBufferDTO>  minBuffers = bufferService.getAllMinBuffers(file);
 
@@ -98,9 +103,9 @@ public class BufferController {
 
         for(MinBufferDTO minBuffer : minBuffers){
             Optional<AllMtsSkus> optMtsSkus = allMtsSkusMinBufferService.findByStockLocationNameAndLocationSkuName(minBuffer.getStockLocation(), minBuffer.getSKUName());
-            Optional<AllMtsSkus> optMtsSkusCatalog = allMtsSkusMinBufferRepository.findByStockLocationNameIgnoreCaseAndLocationSkuNameIgnoreCase(Catalog, minBuffer.getSKUName());
+            Optional<AllMtsSkus> optMtsSkusCatalog = allMtsSkusMinBufferRepository.findByStockLocationNameIgnoreCaseAndLocationSkuNameIgnoreCase(catalog, minBuffer.getSKUName());
 
-            if (optMtsSkus.isPresent() & optMtsSkusCatalog.isPresent()){
+            if  (optMtsSkus.isPresent() & optMtsSkusCatalog.isPresent()) {
 
                 AllMtsSkus mtsSkus = optMtsSkus.get();
                 AllMtsSkus mtsSkusCatalog = optMtsSkusCatalog.get();
@@ -111,7 +116,7 @@ public class BufferController {
                 minOutputBuffer.setSkuName(minBuffer.getSKUName()); //2
                 minOutputBuffer.setSkuDescription(mtsSkusCatalog.getSkuDescription()); //3
 
-                minOutputBuffer.setBufferSize(minBuffer.getMinBufferSize()==0 ? 0 : mtsSkus.getBufferSize()); //4 to do, int or double
+                minOutputBuffer.setBufferSize(minBuffer.getMinBufferSize() == 0 ? 0 : mtsSkus.getBufferSize()); //4 to do, int or double
                 minOutputBuffer.setSafetyStock(mtsSkus.getSaftyStock()); //5
                 minOutputBuffer.setOriginStockLocation(mtsSkusCatalog.getOriginStockLocation()); //6
                 minOutputBuffer.setReplenishmentTime(mtsSkusCatalog.getReplenishmentTime()); //7
@@ -125,6 +130,7 @@ public class BufferController {
                 writer.append(minOutputBuffer.toString());
                 writer.append("\n");
             }
+
         }
         writer.close();
         log.info("Output file  successfully created");
@@ -137,6 +143,8 @@ public class BufferController {
         log.info("Start running Symphony part - " + dateFormat.format(date));
 
         try {
+            symphonyFileStructureRepository.setAvoidWhenUpdate(symphonyFileName, symphonyFieldName, 0);
+
             String batFile = env.getProperty("bufferPrep.bat-file-name");
 
             Process process = Runtime.getRuntime().exec(batFile);
@@ -153,9 +161,12 @@ public class BufferController {
             String response = byteArrayOutputStream.toString();
             log.info("Response from Symphony: " + response);
 
+            symphonyFileStructureRepository.setAvoidWhenUpdate(symphonyFileName, symphonyFieldName, 1);
+
             date = new Date();
             log.info("End running Symphony part - " + dateFormat.format(date));
         }catch (Exception e){
+            symphonyFileStructureRepository.setAvoidWhenUpdate(symphonyFileName, symphonyFieldName, 1);
             e.printStackTrace();
         }
 
