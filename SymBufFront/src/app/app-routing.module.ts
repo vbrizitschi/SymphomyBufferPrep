@@ -6,12 +6,14 @@ import {CalculationLogsComponent} from "./components/logs/calculation-logs/calcu
 import {LoginFormComponent} from "./components/auth/login-form/login-form.component";
 import {AuthGuard} from "./components/auth/auth.guard";
 import {StocklocationsComponent} from "./components/refs/stocklocations/stocklocations.component";
+import {LoadMinBufferComponent} from "./components/buffer/load-min-buffer/load-min-buffer.component";
 
 const routes: Routes = [
   { path: 'load-buffer', component: LoadBufferComponent, canActivate: [AuthGuard] },
+  { path: 'load-min-buffer', component: LoadMinBufferComponent, canActivate: [AuthGuard]},
   { path: 'calculation-logs', component: CalculationLogsComponent, canActivate: [AuthGuard]},
   { path: 'login', component: LoginFormComponent},
-  { path: 'stocklocations', component: StocklocationsComponent}
+  { path: 'stock-locations', component: StocklocationsComponent}
 ];
 
 @NgModule({

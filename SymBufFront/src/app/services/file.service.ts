@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {Observable, retry, share, Subject, switchMap, tap, timer} from "rxjs";
+import {Observable} from "rxjs";
 import {environment} from "../../environments/environment";
 
 @Injectable({
@@ -8,14 +8,20 @@ import {environment} from "../../environments/environment";
 })
 export class FileService {
 
-  private baseUrl: string = `${environment.baseUrl}/documents/re-build-file`;
+  private baseUrl: string = environment.baseUrl;
 
   constructor(private http: HttpClient) { }
 
-  uploadFile(file: File): Observable<any>{
+  uploadBuffers(file: File): Observable<any>{
     const formData: FormData = new FormData();
     formData.append('file',file);
-    return this.http.post(this.baseUrl, formData);
+    return this.http.post(`${this.baseUrl}/documents/loadBuffer`, formData);
+  }
+
+  uploadMinBuffers(file: File): Observable<any> {
+    const formData: FormData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.baseUrl}/documents/loadMinBuffer`, formData);
   }
 
   downloadFile(templateName: string) {
@@ -25,4 +31,6 @@ export class FileService {
   testEss(): Observable<any> {
     return this.http.get('http://localhost:8080/sse/words');
   }
+
+
 }

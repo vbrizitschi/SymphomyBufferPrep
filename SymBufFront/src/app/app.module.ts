@@ -29,6 +29,7 @@ import { StocklocationsComponent } from './components/refs/stocklocations/stockl
 import {MatButtonToggleModule} from "@angular/material/button-toggle";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {MatCheckboxModule} from "@angular/material/checkbox";
+import { LoadMinBufferComponent } from './components/buffer/load-min-buffer/load-min-buffer.component';
 
 @NgModule({
   declarations: [
@@ -37,7 +38,8 @@ import {MatCheckboxModule} from "@angular/material/checkbox";
     LoadBufferComponent,
     CalculationLogsComponent,
     LoginFormComponent,
-    StocklocationsComponent
+    StocklocationsComponent,
+    LoadMinBufferComponent
   ],
   imports: [
     BrowserModule,

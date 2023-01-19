@@ -53,7 +53,7 @@ public class BufferController {
         this.symphonyFileStructureRepository = symphonyFileStructureRepository;
     }
 
-    @RequestMapping(value = "/re-build-file", method = RequestMethod.POST)
+    @RequestMapping(value = "/loadBuffer", method = RequestMethod.POST)
     public ResponseEntity<?> excelReader(@RequestParam("file")MultipartFile file) throws IOException {
 
             List<BufferRow> bufferRowList = bufferService.getAllBuffers(file);
@@ -86,13 +86,12 @@ public class BufferController {
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/rebuild-min-buffer", method = RequestMethod.POST)
+    @RequestMapping(value = "/loadMinBuffer", method = RequestMethod.POST)
     @Transactional
     public ResponseEntity<?> rebuildMinBuffer(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
         final String catalog = "CATALOG";
         final String symphonyFileName = "MTSSKUS";
         final String symphonyFieldName = "MINIMUMBUFFERSIZE";
-
         Set<MinBufferDTO>  minBuffers = bufferService.getAllMinBuffers(file);
 
         String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
