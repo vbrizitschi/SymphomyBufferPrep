@@ -57,6 +57,7 @@ public class SecurityConfig  {
                     .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 .and()
                 .authorizeRequests().antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/sse/**").permitAll()
                 .antMatchers("/api/logs/**").access("hasAuthority('SymphonyLogsCalculation')")
                 .anyRequest().authenticated()
         .and()

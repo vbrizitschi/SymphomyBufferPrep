@@ -17,5 +17,8 @@
 
  </div>
   <mat-spinner *ngIf="isLoading"></mat-spinner>
-  <div> <h2>Status: </h2> {{status}} </div>
+  <div> <h2>Status: </h2> {{status }} </div>
+</div>
+<div *ngIf="(event | async); let evt">
+  <div>ID: {{evt}} </div>
 </div>
