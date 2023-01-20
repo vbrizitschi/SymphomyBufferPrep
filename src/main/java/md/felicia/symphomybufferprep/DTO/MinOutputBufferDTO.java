@@ -7,19 +7,19 @@ import java.time.LocalDateTime;
 
 @Data
 public class MinOutputBufferDTO {
-    private String stockLocationName;           //1
-    private String skuName;                     //2
-    private String skuDescription;              //3
+    private String stockLocationName;            //1
+    private String skuName;                      //2
+    private String skuDescription;               //3
     private Integer bufferSize;                  //4
     private Integer safetyStock;                 //5
-    private String originStockLocation;         //6
+    private String originStockLocation;          //6
     private Integer replenishmentTime;           //7
-    private Double unitPrice;                   //8
+    private Double unitPrice;                    //8
     private Integer tvc;                         //9
     private Integer minReplenishment;            //11
     private Integer replenishmentMultip;         //12
     private Integer minimumBufferSize;           //48
-    private Integer reportYear;                     //72
+    private Integer reportYear;                  //72
     private Integer reportMonth;                //73
     private Integer reportDay;                  //74;
 
@@ -37,9 +37,9 @@ public class MinOutputBufferDTO {
                         "|" +   skuDescription +        //3
                         "|" +   bufferSize +            //4
                         "|" +   safetyStock +           //5
-                        "|" +   originStockLocation +   //6
+                        "|" +   "1584"              +   //6
                         "|" +   replenishmentTime   +   //7
-                        "|" +   unitPrice   +           //8
+                        "|" +   "0,01"      +           //8
                         "|" +   tvc +                   //9
                         "|" +   "0" +                   //10
                         "|" +   minReplenishment +      //11

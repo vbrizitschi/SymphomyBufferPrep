@@ -5,10 +5,11 @@ import md.felicia.symphomybufferprep.DTO.MinBufferDTO;
 import md.felicia.symphomybufferprep.DTO.MinOutputBufferDTO;
 import md.felicia.symphomybufferprep.entity.AllMtsSkus;
 import md.felicia.symphomybufferprep.entity.BufferRow;
+import md.felicia.symphomybufferprep.entity.SymphonyFileStructure;
 import md.felicia.symphomybufferprep.repository.AllMtsSkusMinBufferRepository;
-import md.felicia.symphomybufferprep.repository.SymphonyFileStructureRepository;
 import md.felicia.symphomybufferprep.service.AllMtsSkusMinBufferService;
 import md.felicia.symphomybufferprep.service.BufferService;
+import md.felicia.symphomybufferprep.service.SymphonyFileStructureService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
-import javax.transaction.Transactional;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,17 +40,16 @@ public class BufferController {
     private final Environment env;
     private final BufferService bufferService;
     private final AllMtsSkusMinBufferService allMtsSkusMinBufferService;
-
-    private final SymphonyFileStructureRepository symphonyFileStructureRepository;
+    private final SymphonyFileStructureService symphonyFileStructureService;
 
     @Autowired
     public BufferController(Environment env, BufferService bufferService, AllMtsSkusMinBufferService allMtsSkusMinBufferService,
-                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository, SymphonyFileStructureRepository symphonyFileStructureRepository) {
+                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository, SymphonyFileStructureService symphonyFileStructureService) {
         this.env = env;
         this.bufferService = bufferService;
         this.allMtsSkusMinBufferService = allMtsSkusMinBufferService;
         this.allMtsSkusMinBufferRepository = allMtsSkusMinBufferRepository;
-        this.symphonyFileStructureRepository = symphonyFileStructureRepository;
+        this.symphonyFileStructureService = symphonyFileStructureService;
     }
 
     @RequestMapping(value = "/loadBuffer", method = RequestMethod.POST)
@@ -72,26 +71,29 @@ public class BufferController {
 
             log.info("Writing to Symphony file finished ");
 
-//            Runtime runtime = Runtime.getRuntime();
-//
-//            String batFile = env.getProperty("bufferPrep.bat-file-name");
-//
-//            try {
-//                log.info("Try to call bat file: " + batFile);
-//                runtime.exec("cmd /c start "+ batFile);
-//            }catch (IOException ioException){
-//                throw new RuntimeException(ioException);
-//            }
+        Date date = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+
+        try {
+            doSymphonyProcess(env);
+
+            date = new Date();
+            log.info("End running Symphony part - " + dateFormat.format(date));
+
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 
+
     @RequestMapping(value = "/loadMinBuffer", method = RequestMethod.POST)
-    @Transactional
     public ResponseEntity<?> rebuildMinBuffer(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
         final String catalog = "CATALOG";
         final String symphonyFileName = "MTSSKUS";
         final String symphonyFieldName = "MINIMUMBUFFERSIZE";
+
         Set<MinBufferDTO>  minBuffers = bufferService.getAllMinBuffers(file);
 
         String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
@@ -113,16 +115,14 @@ public class BufferController {
                 minOutputBuffer.setStockLocationName(minBuffer.getStockLocation()); //1
                 minOutputBuffer.setSkuName(minBuffer.getSKUName()); //2
                 minOutputBuffer.setSkuDescription(mtsSkusCatalog.getSkuDescription()); //3
-
-                minOutputBuffer.setBufferSize(minBuffer.getMinBufferSize() == 0 ? 0 : mtsSkus.getBufferSize()); //4 to do, int or double
+                minOutputBuffer.setBufferSize((mtsSkus.getBufferSize()<minBuffer.getMinBufferSize())?minBuffer.getMinBufferSize():mtsSkus.getBufferSize());
                 minOutputBuffer.setSafetyStock(mtsSkus.getSaftyStock()); //5
                 minOutputBuffer.setOriginStockLocation(mtsSkusCatalog.getOriginStockLocation()); //6
                 minOutputBuffer.setReplenishmentTime(mtsSkusCatalog.getReplenishmentTime()); //7
-                minOutputBuffer.setUnitPrice(mtsSkus.getUnitPrice()); //8
+               // minOutputBuffer.setUnitPrice(mtsSkus.getUnitPrice()); //8
                 minOutputBuffer.setTvc(mtsSkus.getTvc()); //9
                 minOutputBuffer.setMinReplenishment(mtsSkusCatalog.getMinimumReplenishment()); //11
                 minOutputBuffer.setReplenishmentMultip(mtsSkusCatalog.getMultiplications()); //12
-
                 minOutputBuffer.setMinimumBufferSize(minBuffer.getMinBufferSize()); //48
 
                 writer.append(minOutputBuffer.toString());
@@ -139,39 +139,28 @@ public class BufferController {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
         log.info("Start running Symphony part - " + dateFormat.format(date));
+        SymphonyFileStructure symphonyFileStructure = symphonyFileStructureService.getSymphonyFileStructure(symphonyFileName, symphonyFieldName);
 
         try {
-            symphonyFileStructureRepository.setAvoidWhenUpdate(symphonyFileName, symphonyFieldName, 0);
+            symphonyFileStructure.setAvoidWhenUpdate(0);
+            symphonyFileStructureService.updateSymphonyFileStructure(symphonyFileStructure);
 
-            String batFile = env.getProperty("bufferPrep.bat-file-name");
+            doSymphonyProcess(env);
 
-            Process process = Runtime.getRuntime().exec(batFile);
-            process.waitFor();
-
-            InputStream inputStream = process.getInputStream();
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-            int c = -1;
-            while ((c = inputStream.read()) != -1) {
-                byteArrayOutputStream.write(c);
-            }
-
-            String response = byteArrayOutputStream.toString();
-            log.info("Response from Symphony: " + response);
-
-            symphonyFileStructureRepository.setAvoidWhenUpdate(symphonyFileName, symphonyFieldName, 1);
+            symphonyFileStructure.setAvoidWhenUpdate(1);
+            symphonyFileStructureService.updateSymphonyFileStructure(symphonyFileStructure);
 
             date = new Date();
             log.info("End running Symphony part - " + dateFormat.format(date));
         }catch (Exception e){
-            symphonyFileStructureRepository.setAvoidWhenUpdate(symphonyFileName, symphonyFieldName, 1);
             e.printStackTrace();
+        }finally {
+            symphonyFileStructure.setAvoidWhenUpdate(1);
+            symphonyFileStructureService.updateSymphonyFileStructure(symphonyFileStructure);
         }
-
 
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
-
 
     @RequestMapping(value = "/download-template", method = RequestMethod.GET)
     public ResponseEntity<?> downloadTemplate(@RequestParam("doc_name") String doc_name) throws IOException {
@@ -192,6 +181,23 @@ public class BufferController {
                 .contentLength(file.length())
                 .contentType(MediaType.parseMediaType("application/excel"))
                 .body(resource);
+    }
+
+    private static void doSymphonyProcess(Environment env) throws IOException, InterruptedException {
+        String batFile = env.getProperty("bufferPrep.bat-file-name");
+        Process process = Runtime.getRuntime().exec(batFile);
+        process.waitFor();
+
+        InputStream inputStream = process.getInputStream();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        int c = -1;
+        while ((c = inputStream.read()) != -1) {
+            byteArrayOutputStream.write(c);
+        }
+
+        String response = byteArrayOutputStream.toString();
+        log.info("Response from Symphony: " + response);
     }
 
 }
