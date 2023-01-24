@@ -36,7 +36,6 @@ import java.util.*;
 @Slf4j
 public class BufferController {
     private final AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository;
-
     private final Environment env;
     private final BufferService bufferService;
     private final AllMtsSkusMinBufferService allMtsSkusMinBufferService;
