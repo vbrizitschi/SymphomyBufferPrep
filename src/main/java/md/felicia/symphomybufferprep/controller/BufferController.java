@@ -91,7 +91,7 @@ public class BufferController {
     public ResponseEntity<?> rebuildMinBuffer(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
         final String catalog = "CATALOG";
         final String symphonyFileName = "MTSSKUS";
-        final String symphonyFieldName = "MINIMUMBUFFERSIZE";
+        String symphonyFieldName = "MINIMUMBUFFERSIZE";
 
         Set<MinBufferDTO>  minBuffers = bufferService.getAllMinBuffers(file);
 
@@ -138,24 +138,35 @@ public class BufferController {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
         log.info("Start running Symphony part - " + dateFormat.format(date));
-        SymphonyFileStructure symphonyFileStructure = symphonyFileStructureService.getSymphonyFileStructure(symphonyFileName, symphonyFieldName);
+
+        SymphonyFileStructure symFileStructureMinBuffSize = symphonyFileStructureService.getSymphonyFileStructure(symphonyFileName, symphonyFieldName);
+        symphonyFieldName = "BUFFERSIZE";
+        SymphonyFileStructure symFileStructureBuffSize = symphonyFileStructureService.getSymphonyFileStructure(symphonyFileName, symphonyFieldName);
 
         try {
-            symphonyFileStructure.setAvoidWhenUpdate(0);
-            symphonyFileStructureService.updateSymphonyFileStructure(symphonyFileStructure);
+            symFileStructureMinBuffSize.setAvoidWhenUpdate(0);
+            symFileStructureBuffSize.setAvoidWhenUpdate(0);
+
+            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureMinBuffSize);
+            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureBuffSize);
 
             doSymphonyProcess(env);
 
-            symphonyFileStructure.setAvoidWhenUpdate(1);
-            symphonyFileStructureService.updateSymphonyFileStructure(symphonyFileStructure);
+            symFileStructureMinBuffSize.setAvoidWhenUpdate(1);
+            symFileStructureBuffSize.setAvoidWhenUpdate(1);
+
+            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureMinBuffSize);
+            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureBuffSize);
 
             date = new Date();
             log.info("End running Symphony part - " + dateFormat.format(date));
         }catch (Exception e){
             e.printStackTrace();
         }finally {
-            symphonyFileStructure.setAvoidWhenUpdate(1);
-            symphonyFileStructureService.updateSymphonyFileStructure(symphonyFileStructure);
+            symFileStructureMinBuffSize.setAvoidWhenUpdate(1);
+            symFileStructureBuffSize.setAvoidWhenUpdate(1);
+            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureMinBuffSize);
+            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureBuffSize);
         }
 
         return new ResponseEntity<>("Success", HttpStatus.OK);
