@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 
 import java.io.*;
@@ -29,6 +30,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials="true")
@@ -40,6 +44,7 @@ public class BufferController {
     private final BufferService bufferService;
     private final AllMtsSkusMinBufferService allMtsSkusMinBufferService;
     private final SymphonyFileStructureService symphonyFileStructureService;
+    final String catalog = "CATALOG";
 
     @Autowired
     public BufferController(Environment env, BufferService bufferService, AllMtsSkusMinBufferService allMtsSkusMinBufferService,
@@ -86,90 +91,49 @@ public class BufferController {
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 
-
     @RequestMapping(value = "/loadMinBuffer", method = RequestMethod.POST)
-    public ResponseEntity<?> rebuildMinBuffer(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
-        final String catalog = "CATALOG";
-        final String symphonyFileName = "MTSSKUS";
-        String symphonyFieldName = "MINIMUMBUFFERSIZE";
+    public ResponseEntity<SseEmitter> rebuildMinBuffer(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
 
-        Set<MinBufferDTO>  minBuffers = bufferService.getAllMinBuffers(file);
+        final SseEmitter sseEmitter = new SseEmitter();
+        ExecutorService service  = Executors.newSingleThreadExecutor();
 
-        String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
-        String fileName = env.getProperty("bufferPrep.output-folder") + "/MTSSKUS_SymFelMan_"+ currentDate +".txt";
-        BufferedWriter writer= new BufferedWriter(new FileWriter(fileName));
-        log.info("Try to write in Symphony file: " + fileName);
+        service.execute(() -> {
+            try {
+                sseEmitter.send("Read data from excel file");
+                    Set<MinBufferDTO> minBuffers = bufferService.getAllMinBuffers(file);
+                sseEmitter.send("Excel data received successfully");
+                sseEmitter.send("Start rebuilding Symphony data");
+                    doBuildMinBufferFile(minBuffers);
+                sseEmitter.send("Finished rebuilding, txt file was created");
 
-        for(MinBufferDTO minBuffer : minBuffers){
-            Optional<AllMtsSkus> optMtsSkus = allMtsSkusMinBufferService.findByStockLocationNameAndLocationSkuName(minBuffer.getStockLocation(), minBuffer.getSKUName());
-            Optional<AllMtsSkus> optMtsSkusCatalog = allMtsSkusMinBufferRepository.findByStockLocationNameIgnoreCaseAndLocationSkuNameIgnoreCase(catalog, minBuffer.getSKUName());
+                log.info("Output file  successfully created");
+                ////############
+                Date date = new Date();
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
-            if  (optMtsSkus.isPresent() & optMtsSkusCatalog.isPresent()) {
+                log.info("Start running Symphony part - " + dateFormat.format(date));
 
-                AllMtsSkus mtsSkus = optMtsSkus.get();
-                AllMtsSkus mtsSkusCatalog = optMtsSkusCatalog.get();
+                    updateSymphonyTechTable(0);
 
-                MinOutputBufferDTO minOutputBuffer = new MinOutputBufferDTO();
+                sseEmitter.send("Symphony data loading starts: " + dateFormat.format(date));
 
-                minOutputBuffer.setStockLocationName(minBuffer.getStockLocation()); //1
-                minOutputBuffer.setSkuName(minBuffer.getSKUName()); //2
-                minOutputBuffer.setSkuDescription(mtsSkusCatalog.getSkuDescription()); //3
-                minOutputBuffer.setBufferSize((mtsSkus.getBufferSize()<minBuffer.getMinBufferSize())?minBuffer.getMinBufferSize():mtsSkus.getBufferSize());
-                minOutputBuffer.setSafetyStock(mtsSkus.getSaftyStock()); //5
-                minOutputBuffer.setOriginStockLocation(mtsSkusCatalog.getOriginStockLocation()); //6
-                minOutputBuffer.setReplenishmentTime(mtsSkusCatalog.getReplenishmentTime()); //7
-               // minOutputBuffer.setUnitPrice(mtsSkus.getUnitPrice()); //8
-                minOutputBuffer.setTvc(mtsSkus.getTvc()); //9
-                minOutputBuffer.setMinReplenishment(mtsSkusCatalog.getMinimumReplenishment()); //11
-                minOutputBuffer.setReplenishmentMultip(mtsSkusCatalog.getMultiplications()); //12
-                minOutputBuffer.setMinimumBufferSize(minBuffer.getMinBufferSize()); //48
+                    doSymphonyProcess(env);
 
-                writer.append(minOutputBuffer.toString());
-                writer.append("\n");
+                    updateSymphonyTechTable(1);
+
+                date = new Date();
+                log.info("End running Symphony part - " + dateFormat.format(date));
+                sseEmitter.send("Symphony loading is complete " + dateFormat.format(date));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                sseEmitter.completeWithError(e);
+            } finally {
+                updateSymphonyTechTable(1);
             }
+        });
 
-        }
-        writer.close();
-        log.info("Output file  successfully created");
-
-        ////############
-
-        Date date = new Date();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-
-        log.info("Start running Symphony part - " + dateFormat.format(date));
-
-        SymphonyFileStructure symFileStructureMinBuffSize = symphonyFileStructureService.getSymphonyFileStructure(symphonyFileName, symphonyFieldName);
-        symphonyFieldName = "BUFFERSIZE";
-        SymphonyFileStructure symFileStructureBuffSize = symphonyFileStructureService.getSymphonyFileStructure(symphonyFileName, symphonyFieldName);
-
-        try {
-            symFileStructureMinBuffSize.setAvoidWhenUpdate(0);
-            symFileStructureBuffSize.setAvoidWhenUpdate(0);
-
-            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureMinBuffSize);
-            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureBuffSize);
-
-            doSymphonyProcess(env);
-
-            symFileStructureMinBuffSize.setAvoidWhenUpdate(1);
-            symFileStructureBuffSize.setAvoidWhenUpdate(1);
-
-            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureMinBuffSize);
-            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureBuffSize);
-
-            date = new Date();
-            log.info("End running Symphony part - " + dateFormat.format(date));
-        }catch (Exception e){
-            e.printStackTrace();
-        }finally {
-            symFileStructureMinBuffSize.setAvoidWhenUpdate(1);
-            symFileStructureBuffSize.setAvoidWhenUpdate(1);
-            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureMinBuffSize);
-            symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureBuffSize);
-        }
-
-        return new ResponseEntity<>("Success", HttpStatus.OK);
+        return new ResponseEntity<>(sseEmitter, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/download-template", method = RequestMethod.GET)
@@ -208,6 +172,68 @@ public class BufferController {
 
         String response = byteArrayOutputStream.toString();
         log.info("Response from Symphony: " + response);
+    }
+
+
+    private void doBuildMinBufferFile(Set<MinBufferDTO> minBuffers) throws IOException {
+        String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
+        String fileName = env.getProperty("bufferPrep.output-folder") + "/MTSSKUS_SymFelMan_"+ currentDate +".txt";
+
+        log.info("Try to write in Symphony file: " + fileName);
+
+        BufferedWriter writer= new BufferedWriter(new FileWriter(fileName));
+
+        for(MinBufferDTO minBuffer : minBuffers){
+            Optional<AllMtsSkus> optMtsSkus
+                    = allMtsSkusMinBufferService.findByStockLocationNameAndLocationSkuName(minBuffer.getStockLocation(), minBuffer.getSKUName());
+            Optional<AllMtsSkus> optMtsSkusCatalog
+                    = allMtsSkusMinBufferRepository.findByStockLocationNameIgnoreCaseAndLocationSkuNameIgnoreCase(this.catalog, minBuffer.getSKUName());
+
+            if  (optMtsSkus.isPresent() & optMtsSkusCatalog.isPresent()) {
+
+                AllMtsSkus mtsSkus = optMtsSkus.get();
+                AllMtsSkus mtsSkusCatalog = optMtsSkusCatalog.get();
+
+                MinOutputBufferDTO minOutputBuffer = new MinOutputBufferDTO();
+
+                minOutputBuffer.setStockLocationName(minBuffer.getStockLocation()); //1
+                minOutputBuffer.setSkuName(minBuffer.getSKUName()); //2
+                minOutputBuffer.setSkuDescription(mtsSkusCatalog.getSkuDescription()); //3
+                minOutputBuffer.setBufferSize((mtsSkus.getBufferSize()<minBuffer.getMinBufferSize())?minBuffer.getMinBufferSize():mtsSkus.getBufferSize());
+                minOutputBuffer.setSafetyStock(mtsSkus.getSaftyStock()); //5
+                minOutputBuffer.setOriginStockLocation(mtsSkusCatalog.getOriginStockLocation()); //6
+                minOutputBuffer.setReplenishmentTime(mtsSkusCatalog.getReplenishmentTime()); //7
+                // minOutputBuffer.setUnitPrice(mtsSkus.getUnitPrice()); //8
+                minOutputBuffer.setTvc(mtsSkus.getTvc()); //9
+                minOutputBuffer.setMinReplenishment(mtsSkusCatalog.getMinimumReplenishment()); //11
+                minOutputBuffer.setReplenishmentMultip(mtsSkusCatalog.getMultiplications()); //12
+                minOutputBuffer.setMinimumBufferSize(minBuffer.getMinBufferSize()); //48
+
+                writer.append(minOutputBuffer.toString());
+                writer.append("\n");
+
+            }
+
+        }
+        writer.close();
+    }
+
+    private void updateSymphonyTechTable(int flag){
+        String symphonyFileName = "MTSSKUS";
+        String symphonyFieldName = "MINIMUMBUFFERSIZE";
+
+        SymphonyFileStructure  symFileStructureMinBuffSize
+                    = symphonyFileStructureService.getSymphonyFileStructure(symphonyFileName, symphonyFieldName);
+        symphonyFieldName = "BUFFERSIZE";
+        SymphonyFileStructure  symFileStructureBuffSize
+                    = symphonyFileStructureService.getSymphonyFileStructure(symphonyFileName, symphonyFieldName);
+
+        symFileStructureMinBuffSize.setAvoidWhenUpdate(flag);
+        symFileStructureBuffSize.setAvoidWhenUpdate(flag);
+
+        symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureMinBuffSize);
+        symphonyFileStructureService.updateSymphonyFileStructure(symFileStructureBuffSize);
+
     }
 
 }
