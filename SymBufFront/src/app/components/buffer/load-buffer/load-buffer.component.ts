@@ -28,7 +28,7 @@ export class LoadBufferComponent implements OnInit{
   upload(event:any){
     this.isLoading = true;
     this.fileService.uploadBuffers(event.target.files[0]).subscribe(data => {
-      console.log(data);
+      console.log('data', data);
       this.status = data;
      this.isLoading = false;
     }, error => {

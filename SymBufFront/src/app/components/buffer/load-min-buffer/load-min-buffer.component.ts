@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import {saveAs} from "file-saver";
 import {FileService} from "../../../services/file.service";
+import {dateTimestampProvider} from "rxjs/internal/scheduler/dateTimestampProvider";
 
 @Component({
   selector: 'app-load-min-buffer',
@@ -10,18 +11,22 @@ import {FileService} from "../../../services/file.service";
 export class LoadMinBufferComponent {
   isLoading: boolean = false;
 
-  status: string = "";
+  status: string[] = [];
 
   constructor(private fileService: FileService) {
   }
 
   upload(event:any){
     this.isLoading = true;
-    this.fileService.uploadMinBuffers(event.target.files[0]).subscribe(data => {
-      console.log(data);
-      this.status = data;
-      this.isLoading = false;
+    this.fileService.uploadMinBufferSSE(event.target.files[0]).subscribe(data => {
+      console.log('data', data);
+      this.status.push(data)
+
     }, error => {
+      console.log('error', error)
+      this.isLoading = false;
+    }, ()=>{
+      this.fileService.closeEventSource();
       this.isLoading = false;
     })
 

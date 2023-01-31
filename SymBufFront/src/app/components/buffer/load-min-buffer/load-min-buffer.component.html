@@ -17,5 +17,5 @@
 
   </div>
   <mat-spinner *ngIf="isLoading"></mat-spinner>
-  <div> <h2>Status: </h2> {{status }} </div>
+  <div *ngFor="let s of status">{{s}}</div>
 </div>
