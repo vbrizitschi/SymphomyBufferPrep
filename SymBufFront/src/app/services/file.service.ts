@@ -2,7 +2,6 @@ import {Injectable, NgZone} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs";
 import {environment} from "../../environments/environment";
-import {LoginService} from "./login.service";
 import {StorageService} from "./storage.service";
 
 declare let SSE: any;
@@ -65,6 +64,9 @@ export class FileService {
           observer.error(error);
         });
       };
+      eventSource.oncomplete = (event: any) => {
+        observer.complete();
+      }
     });
   }
 
@@ -85,6 +87,10 @@ export class FileService {
     this.eventSource.addEventListener('message', (e:any) => {
       return e.data;
     });
+
+    this.eventSource.addEventListener('complete', (e:any) => {
+      return e;
+    })
 
     return  this.eventSource;
   }

@@ -58,9 +58,11 @@ var SSE = function (url, options) {
   };
 
   this.dispatchEvent = function(e) {
+
     if (!e) {
       return true;
     }
+
 
     e.source = this;
 

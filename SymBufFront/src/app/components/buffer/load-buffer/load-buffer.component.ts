@@ -1,7 +1,7 @@
-import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
+import {Component, NgZone, OnInit} from '@angular/core';
 import {FileService} from "../../../services/file.service";
 import {saveAs} from 'file-saver';
-import {BehaviorSubject, Observable, Subject, switchMap, takeUntil, timer} from "rxjs";
+import {BehaviorSubject, Observable } from "rxjs";
 
 
 @Component({
@@ -32,6 +32,7 @@ export class LoadBufferComponent implements OnInit{
       this.status = data;
      this.isLoading = false;
     }, error => {
+      console.error('error', error);
       this.isLoading = false;
     })
 
@@ -39,7 +40,7 @@ export class LoadBufferComponent implements OnInit{
 
   downloadFile() {
       this.fileService.downloadFile('load_buffer.xlsx').subscribe(data => {
-        console.log('data', data)
+        console.log('data', data);
         this.saveToFileSystem(data, 'buffer-template.xlsx');
       })
   }

@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,6 +46,8 @@ public class BufferController {
     private final AllMtsSkusMinBufferService allMtsSkusMinBufferService;
     private final SymphonyFileStructureService symphonyFileStructureService;
     final String catalog = "CATALOG";
+
+    final String COMPLETED_EVENT = "complete";
 
     @Autowired
     public BufferController(Environment env, BufferService bufferService, AllMtsSkusMinBufferService allMtsSkusMinBufferService,
@@ -94,7 +97,7 @@ public class BufferController {
     @RequestMapping(value = "/loadMinBuffer", method = RequestMethod.POST)
     public ResponseEntity<SseEmitter> rebuildMinBuffer(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
 
-        final SseEmitter sseEmitter = new SseEmitter();
+        final SseEmitter sseEmitter = new SseEmitter(0L);
         ExecutorService service  = Executors.newSingleThreadExecutor();
 
         service.execute(() -> {
@@ -125,6 +128,13 @@ public class BufferController {
                 log.info("End running Symphony part - " + dateFormat.format(date));
                 sseEmitter.send("Symphony loading is complete " + dateFormat.format(date));
 
+                sseEmitter.send(SseEmitter
+                        .event()
+                        .id(String.valueOf(System.currentTimeMillis()))
+                        .name(COMPLETED_EVENT)
+                        .data(""));
+
+                sseEmitter.complete();
             } catch (Exception e) {
                 e.printStackTrace();
                 sseEmitter.completeWithError(e);

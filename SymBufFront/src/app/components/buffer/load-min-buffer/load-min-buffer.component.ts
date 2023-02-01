@@ -19,7 +19,6 @@ export class LoadMinBufferComponent {
   upload(event:any){
     this.isLoading = true;
     this.fileService.uploadMinBufferSSE(event.target.files[0]).subscribe(data => {
-      console.log('data', data);
       this.status.push(data)
 
     }, error => {
