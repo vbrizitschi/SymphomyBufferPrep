@@ -25,7 +25,6 @@ export class LoadMinBufferComponent {
       console.log('error', error)
       this.isLoading = false;
     }, ()=>{
-      this.fileService.closeEventSource();
       this.isLoading = false;
     })
 

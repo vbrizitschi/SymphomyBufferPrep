@@ -60,6 +60,7 @@ public class SecurityConfig  {
               //  .antMatchers("/sse/**").permitAll()
                 .antMatchers("/login").permitAll()
                 .antMatchers("/*").permitAll()
+                .antMatchers("/assets/*.js").permitAll()
                 .antMatchers("/api/logs/**").access("hasAuthority('SymphonyLogsCalculation')")
                 .anyRequest().authenticated()
         .and()

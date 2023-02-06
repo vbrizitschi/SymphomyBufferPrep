@@ -10,30 +10,27 @@ import md.felicia.symphomybufferprep.repository.AllMtsSkusMinBufferRepository;
 import md.felicia.symphomybufferprep.service.AllMtsSkusMinBufferService;
 import md.felicia.symphomybufferprep.service.BufferService;
 import md.felicia.symphomybufferprep.service.SymphonyFileStructureService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials="true")
@@ -185,7 +182,7 @@ public class BufferController {
     }
 
 
-    private void doBuildMinBufferFile(Set<MinBufferDTO> minBuffers) throws IOException {
+    private void doBuildMinBufferFile(@NotNull Set<MinBufferDTO> minBuffers) throws IOException {
         String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
         String fileName = env.getProperty("bufferPrep.output-folder") + "/MTSSKUS_SymFelMan_"+ currentDate +".txt";
 
@@ -199,22 +196,34 @@ public class BufferController {
             Optional<AllMtsSkus> optMtsSkusCatalog
                     = allMtsSkusMinBufferRepository.findByStockLocationNameIgnoreCaseAndLocationSkuNameIgnoreCase(this.catalog, minBuffer.getSKUName());
 
-            if  (optMtsSkus.isPresent() & optMtsSkusCatalog.isPresent()) {
+            if  (optMtsSkusCatalog.isPresent()) {
 
-                AllMtsSkus mtsSkus = optMtsSkus.get();
+
                 AllMtsSkus mtsSkusCatalog = optMtsSkusCatalog.get();
+                int bufferSize;
+                String tvc;
+                int safetyStock;
+
+                if(optMtsSkus.isEmpty()) {
+                    bufferSize = minBuffer.getMinBufferSize();
+                    safetyStock = 0;
+                } else {
+                    AllMtsSkus mtsSkus = optMtsSkus.get();
+                    bufferSize = (mtsSkus.getBufferSize()<minBuffer.getMinBufferSize())?minBuffer.getMinBufferSize():mtsSkus.getBufferSize();
+                    safetyStock = mtsSkus.getSaftyStock();
+                }
 
                 MinOutputBufferDTO minOutputBuffer = new MinOutputBufferDTO();
 
                 minOutputBuffer.setStockLocationName(minBuffer.getStockLocation()); //1
                 minOutputBuffer.setSkuName(minBuffer.getSKUName()); //2
                 minOutputBuffer.setSkuDescription(mtsSkusCatalog.getSkuDescription()); //3
-                minOutputBuffer.setBufferSize((mtsSkus.getBufferSize()<minBuffer.getMinBufferSize())?minBuffer.getMinBufferSize():mtsSkus.getBufferSize());
-                minOutputBuffer.setSafetyStock(mtsSkus.getSaftyStock()); //5
+                minOutputBuffer.setBufferSize(bufferSize);
+                minOutputBuffer.setSafetyStock(safetyStock); //5
                 minOutputBuffer.setOriginStockLocation(mtsSkusCatalog.getOriginStockLocation()); //6
                 minOutputBuffer.setReplenishmentTime(mtsSkusCatalog.getReplenishmentTime()); //7
                 // minOutputBuffer.setUnitPrice(mtsSkus.getUnitPrice()); //8
-                minOutputBuffer.setTvc(mtsSkus.getTvc()); //9
+                // minOutputBuffer.setTvc(tvc); //9
                 minOutputBuffer.setMinReplenishment(mtsSkusCatalog.getMinimumReplenishment()); //11
                 minOutputBuffer.setReplenishmentMultip(mtsSkusCatalog.getMultiplications()); //12
                 minOutputBuffer.setMinimumBufferSize(minBuffer.getMinBufferSize()); //48

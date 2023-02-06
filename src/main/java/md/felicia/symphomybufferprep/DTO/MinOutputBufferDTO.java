@@ -40,7 +40,7 @@ public class MinOutputBufferDTO {
                         "|" +   "1584"              +   //6
                         "|" +   replenishmentTime   +   //7
                         "|" +   "0,01"      +           //8
-                        "|" +   tvc +                   //9
+                        "|" +   "0,01"      +           //9
                         "|" +   "0" +                   //10
                         "|" +   minReplenishment +      //11
                         "|" +   replenishmentMultip +   //12
