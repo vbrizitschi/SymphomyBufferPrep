@@ -16,13 +16,9 @@ import javax.persistence.*;
 public class StockLocation {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long stockLocationID;
-
     private String stockLocationName;
-
+    private Long stockLocationID;
     private String stockLocationDescription;
-
     private boolean isDeleted;
 
 }

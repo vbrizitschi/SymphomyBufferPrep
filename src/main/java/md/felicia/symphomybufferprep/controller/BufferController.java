@@ -1,12 +1,15 @@
 package md.felicia.symphomybufferprep.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import md.felicia.symphomybufferprep.DTO.MinBufferDTO;
-import md.felicia.symphomybufferprep.DTO.MinOutputBufferDTO;
+import md.felicia.symphomybufferprep.DTO.*;
 import md.felicia.symphomybufferprep.entity.AllMtsSkus;
 import md.felicia.symphomybufferprep.entity.BufferRow;
+import md.felicia.symphomybufferprep.entity.Bufferstemp;
 import md.felicia.symphomybufferprep.entity.SymphonyFileStructure;
 import md.felicia.symphomybufferprep.repository.AllMtsSkusMinBufferRepository;
+import md.felicia.symphomybufferprep.repository.BuffersTempRepository;
 import md.felicia.symphomybufferprep.service.AllMtsSkusMinBufferService;
 import md.felicia.symphomybufferprep.service.BufferService;
 import md.felicia.symphomybufferprep.service.SymphonyFileStructureService;
@@ -43,18 +46,20 @@ public class BufferController {
     private final BufferService bufferService;
     private final AllMtsSkusMinBufferService allMtsSkusMinBufferService;
     private final SymphonyFileStructureService symphonyFileStructureService;
+    private final BuffersTempRepository buffersTempRepository;
     final String catalog = "CATALOG";
 
     final String COMPLETED_EVENT = "complete";
 
     @Autowired
     public BufferController(Environment env, BufferService bufferService, AllMtsSkusMinBufferService allMtsSkusMinBufferService,
-                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository, SymphonyFileStructureService symphonyFileStructureService) {
+                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository, SymphonyFileStructureService symphonyFileStructureService, BuffersTempRepository buffersTempRepository) {
         this.env = env;
         this.bufferService = bufferService;
         this.allMtsSkusMinBufferService = allMtsSkusMinBufferService;
         this.allMtsSkusMinBufferRepository = allMtsSkusMinBufferRepository;
         this.symphonyFileStructureService = symphonyFileStructureService;
+        this.buffersTempRepository = buffersTempRepository;
     }
 
     @RequestMapping(value = "/loadBuffer", method = RequestMethod.POST)
@@ -144,6 +149,25 @@ public class BufferController {
 
         return new ResponseEntity<>(sseEmitter, HttpStatus.OK);
     }
+
+    @RequestMapping(value = "/runCalculateBuffer", method = RequestMethod.POST)
+    public ResponseEntity<?> calcBuffer(@RequestBody RunCalculateBufferDTO runCalculateBufferDTO){
+        RunBufferDTO runBufferDTO = new RunBufferDTO(runCalculateBufferDTO);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonStr;
+        try{
+             jsonStr = objectMapper.writeValueAsString(runBufferDTO);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        List<Bufferstemp> bufferstempList = buffersTempRepository.Runner_CALCULATE_BUFFER_JSON(jsonStr);
+
+
+        return  new ResponseEntity<>(bufferstempList, HttpStatus.OK);
+    }
+
 
     @RequestMapping(value = "/download-template", method = RequestMethod.GET)
     public ResponseEntity<?> downloadTemplate(@RequestParam("doc_name") String doc_name) throws IOException {
