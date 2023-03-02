@@ -10,7 +10,7 @@ import md.felicia.symphomybufferprep.repository.AllMtsSkusMinBufferRepository;
 import md.felicia.symphomybufferprep.service.AllMtsSkusMinBufferService;
 import md.felicia.symphomybufferprep.service.BufferService;
 import md.felicia.symphomybufferprep.service.SymphonyFileStructureService;
-import org.jetbrains.annotations.NotNull;
+//import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -92,7 +93,8 @@ public class BufferController {
     }
 
     @RequestMapping(value = "/loadMinBuffer", method = RequestMethod.POST)
-    public ResponseEntity<SseEmitter> rebuildMinBuffer(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
+    public ResponseEntity<SseEmitter> rebuildMinBuffer(@RequestParam("file") MultipartFile file
+                                                     , @RequestParam(value = "changeMinBuffer", defaultValue = "0") String changeMinBuffer) throws IOException, InterruptedException {
 
         final SseEmitter sseEmitter = new SseEmitter(0L);
         ExecutorService service  = Executors.newSingleThreadExecutor();
@@ -103,7 +105,7 @@ public class BufferController {
                     Set<MinBufferDTO> minBuffers = bufferService.getAllMinBuffers(file);
                 sseEmitter.send("Excel data received successfully");
                 sseEmitter.send("Start rebuilding Symphony data");
-                    doBuildMinBufferFile(minBuffers);
+                    doBuildMinBufferFile(minBuffers, changeMinBuffer);
                 sseEmitter.send("Finished rebuilding, txt file was created");
 
                 log.info("Output file  successfully created");
@@ -182,7 +184,7 @@ public class BufferController {
     }
 
 
-    private void doBuildMinBufferFile(@NotNull Set<MinBufferDTO> minBuffers) throws IOException {
+    private void doBuildMinBufferFile(@NotNull Set<MinBufferDTO> minBuffers, String changeMinBuffer) throws IOException {
         String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
         String fileName = env.getProperty("bufferPrep.output-folder") + "/MTSSKUS_SymFelMan_"+ currentDate +".txt";
 
@@ -226,7 +228,9 @@ public class BufferController {
                 // minOutputBuffer.setTvc(tvc); //9
                 minOutputBuffer.setMinReplenishment(mtsSkusCatalog.getMinimumReplenishment()); //11
                 minOutputBuffer.setReplenishmentMultip(mtsSkusCatalog.getMultiplications()); //12
-                minOutputBuffer.setMinimumBufferSize(minBuffer.getMinBufferSize()); //48
+                if (Objects.equals(changeMinBuffer, "1")) {
+                    minOutputBuffer.setMinimumBufferSize(minBuffer.getMinBufferSize()); //48
+                }
 
                 writer.append(minOutputBuffer.toString());
                 writer.append("\n");
