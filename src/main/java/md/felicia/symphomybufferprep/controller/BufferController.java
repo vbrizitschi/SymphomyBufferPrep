@@ -151,21 +151,62 @@ public class BufferController {
     }
 
     @RequestMapping(value = "/runCalculateBuffer", method = RequestMethod.POST)
-    public ResponseEntity<?> calcBuffer(@RequestBody RunCalculateBufferDTO runCalculateBufferDTO){
-        RunBufferDTO runBufferDTO = new RunBufferDTO(runCalculateBufferDTO);
+    public ResponseEntity<SseEmitter> calcBuffer(@RequestBody RunCalculateBufferDTO runCalculateBufferDTO){
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonStr;
-        try{
-             jsonStr = objectMapper.writeValueAsString(runBufferDTO);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        final SseEmitter sseEmitter = new SseEmitter(0L);
+        ExecutorService service  = Executors.newSingleThreadExecutor();
 
-        List<Bufferstemp> bufferstempList = buffersTempRepository.Runner_CALCULATE_BUFFER_JSON(jsonStr);
+        service.execute(() -> {
+            try{
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
+                String fileName = env.getProperty("bufferPrep.output-folder") + "/Seasonality_CalcBuffer_"+ currentDate + ".txt";
+
+                sseEmitter.send(  dateFormat.format(new Date()) + " Read input data, an reformat for symphony proc");
+                RunBufferDTO runBufferDTO = new RunBufferDTO(runCalculateBufferDTO);
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                String jsonStr;
+
+                sseEmitter.send(dateFormat.format(new Date()) + " Create JSON from input data and write value as string " );
+                jsonStr = objectMapper.writeValueAsString(runBufferDTO);
+
+                sseEmitter.send(dateFormat.format(new Date()) + " Call runner calculate buffer proc from Symphony database" );
+                buffersTempRepository.Runner_CALCULATE_BUFFER_JSON(jsonStr);
+
+                sseEmitter.send(dateFormat.format(new Date()) + " Try to obtain result from Symphony database" );
+                List<Bufferstemp> buffersTempList  = buffersTempRepository.findAll();
+
+                BufferedWriter writer= new BufferedWriter(new FileWriter(fileName));
+                sseEmitter.send(dateFormat.format(new Date()) + " Write result in Symphony seasonality output file");
+
+                for (Bufferstemp bufferstemp: buffersTempList){
+                        writer.append(bufferstemp.toString());
+                        writer.append("\n");
+                }
+                writer.close();
+                sseEmitter.send(dateFormat.format(new Date()) + " Write finished with success");
+
+                sseEmitter.send(SseEmitter
+                        .event()
+                        .id(String.valueOf(System.currentTimeMillis()))
+                        .name(COMPLETED_EVENT)
+                        .data(""));
+
+                sseEmitter.complete();
 
 
-        return  new ResponseEntity<>(bufferstempList, HttpStatus.OK);
+            } catch (Exception e){
+                e.printStackTrace();
+                sseEmitter.completeWithError(e);
+            }
+
+        });
+
+
+
+
+        return  new ResponseEntity<>(sseEmitter, HttpStatus.OK);
     }
 
 
