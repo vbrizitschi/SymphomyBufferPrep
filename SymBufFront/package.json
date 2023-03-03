@@ -22,6 +22,7 @@
     "@angular/router": "^15.0.0",
     "@auth0/angular-jwt": "^5.1.2",
     "angular-sse-client": "^0.1.1",
+    "bootstrap": "^5.2.3",
     "file-saver": "^2.0.5",
     "rxjs": "~7.5.0",
     "sse.js": "^0.6.1",
