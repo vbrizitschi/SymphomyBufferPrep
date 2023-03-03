@@ -11,21 +11,17 @@ public class BufferRow {
     private String skuName;
     private String assortmentGroup; //Assortment group(SYM) 2
     private String eventSym; //Type(Event) (SYM) 3
-
     private Double startYear ; //Start Year(SYM) 4
     private Double startMonth; //Start Mont(SYM) 5
     private Double startDay; // Start Date(SYM) 6
-
     private Double endYear; // End Year (SYM) 7
     private Double endMonth; // End Month(SYM) 8
     private Double endDay; //End Day (SYM) 9
-
     private Double updateSteps; //Update Steps(SYM) 10
     private Double resizeValue; // Resize Value(SYM) 11
     private String resizeMethod; //Resize Method(SYM) 12
     private Double autoAccept; //Auto Accept(SYM) 13
     private String status; //Status (SYM) 14
-
     private String reserved1; //15
     private String reserved2; //16
     private String reserved3; //17

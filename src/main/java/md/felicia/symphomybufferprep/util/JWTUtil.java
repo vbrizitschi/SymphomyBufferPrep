@@ -26,7 +26,7 @@ public class JWTUtil {
 
     public String generateToken(Authentication authentication) {
         LdapUserDetailsImpl userPrincipal = (LdapUserDetailsImpl) authentication.getPrincipal();
-        Date expirationDate = Date.from(ZonedDateTime.now().plusMinutes(120).toInstant());
+        Date expirationDate = Date.from(ZonedDateTime.now().plusMinutes(240).toInstant());
 
         return JWT.create()
                 .withSubject("User Details")
