@@ -1,13 +1,8 @@
 import {Component, OnInit} from '@angular/core';
 import {MatTableDataSource} from "@angular/material/table";
 import {SymphonyDataService} from "../../../services/symphony-data.service";
+import {StockLocation} from "../../../interfaces/stockLocation";
 
-export interface StockLocation{
-  stockLocationID: number;
-  stockLocationName: string;
-  stockLocationDescription: string;
-  deleted: boolean;
-}
 
 @Component({
   selector: 'app-stocklocations',
@@ -15,7 +10,7 @@ export interface StockLocation{
   styleUrls: ['./stocklocations.component.css']
 })
 export class StocklocationsComponent implements OnInit{
-  displayedColumns: string[] = ['stockLocationID','stockLocationName','stockLocationDescription','deleted'];
+  displayedColumns: string[] = ['stockLocationName','stockLocationDescription','deleted'];
 
   dataSource: MatTableDataSource<StockLocation> = new MatTableDataSource<StockLocation>();
 
@@ -33,7 +28,6 @@ export class StocklocationsComponent implements OnInit{
     this.symphonyService.getStockLocations().subscribe(data=>{
       this.dataSource.data = data;
       if(this.hideDeleted) {
-        console.log('data', data)
         this.dataSource.data = data.filter((el: StockLocation) => {return !el.deleted})
       }
     })
@@ -45,9 +39,7 @@ export class StocklocationsComponent implements OnInit{
   }
 
   doHideDeleted() {
-    console.log('before', this.hideDeleted)
     this.hideDeleted = !this.hideDeleted;
-    console.log('after', this.hideDeleted)
     this.initData();
 
   }

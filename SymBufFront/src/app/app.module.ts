@@ -30,6 +30,7 @@ import {MatButtonToggleModule} from "@angular/material/button-toggle";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import { LoadMinBufferComponent } from './components/buffer/load-min-buffer/load-min-buffer.component';
+import { CalcBufferComponent } from './components/buffer/calc-buffer/calc-buffer.component';
 
 @NgModule({
   declarations: [
@@ -39,7 +40,8 @@ import { LoadMinBufferComponent } from './components/buffer/load-min-buffer/load
     CalculationLogsComponent,
     LoginFormComponent,
     StocklocationsComponent,
-    LoadMinBufferComponent
+    LoadMinBufferComponent,
+    CalcBufferComponent
   ],
   imports: [
     BrowserModule,

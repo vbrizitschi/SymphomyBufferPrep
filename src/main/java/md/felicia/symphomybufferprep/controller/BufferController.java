@@ -162,7 +162,7 @@ public class BufferController {
                 String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
                 String fileName = env.getProperty("bufferPrep.output-folder") + "/Seasonality_CalcBuffer_"+ currentDate + ".txt";
 
-                sseEmitter.send(  dateFormat.format(new Date()) + " Read input data, an reformat for symphony proc");
+                sseEmitter.send(  dateFormat.format(new Date()) + " Read input data, and reformat for symphony proc");
                 RunBufferDTO runBufferDTO = new RunBufferDTO(runCalculateBufferDTO);
 
                 ObjectMapper objectMapper = new ObjectMapper();

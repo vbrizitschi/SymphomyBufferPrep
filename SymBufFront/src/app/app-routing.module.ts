@@ -7,9 +7,11 @@ import {LoginFormComponent} from "./components/auth/login-form/login-form.compon
 import {AuthGuard} from "./components/auth/auth.guard";
 import {StocklocationsComponent} from "./components/refs/stocklocations/stocklocations.component";
 import {LoadMinBufferComponent} from "./components/buffer/load-min-buffer/load-min-buffer.component";
+import {CalcBufferComponent} from "./components/buffer/calc-buffer/calc-buffer.component";
 
 const routes: Routes = [
   { path: 'load-buffer', component: LoadBufferComponent, canActivate: [AuthGuard] },
+  { path: 'calc-buffer', component: CalcBufferComponent},
   { path: 'load-min-buffer', component: LoadMinBufferComponent, canActivate: [AuthGuard]},
   { path: 'calculation-logs', component: CalculationLogsComponent, canActivate: [AuthGuard]},
   { path: 'login', component: LoginFormComponent},
