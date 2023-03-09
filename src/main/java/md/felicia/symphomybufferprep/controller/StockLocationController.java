@@ -17,7 +17,7 @@ import java.util.List;
 @Slf4j
 public class StockLocationController {
 
-    private StockLocationService stockLocationService;
+    private final StockLocationService stockLocationService;
 
     @Autowired
     public StockLocationController(StockLocationService stockLocationService) {

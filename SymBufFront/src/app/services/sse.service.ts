@@ -42,7 +42,7 @@ export class SseService {
   public getServerSentEventJSON(url: string, data: any): Observable<any>{
     return Observable.create(
       (observer:any) => {
-        const eventSource = this.getEventSourceWithPost(url, data);
+        const eventSource = this.getEventSourceWithPostJSON(url, data);
         // Launch query
         eventSource.stream();
         // on answer from message listener
@@ -141,9 +141,12 @@ export class SseService {
   } {
 
     const token = this.storageService.getItem('token');
-    const headers: Headers;
+    const headers: Headers = new Headers();
     headers.append('Authorization', 'Bearer ' + token);
-    headers.append('Content-Type', 'application/json')
+    headers.append('Content-Type', 'application/json');
+
+    console.log('token', token);
+    console.log('headers', headers);
 
     return {
       payload: data,

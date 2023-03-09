@@ -1,17 +1,15 @@
 package md.felicia.symphomybufferprep.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import md.felicia.symphomybufferprep.DTO.*;
-import md.felicia.symphomybufferprep.entity.AllMtsSkus;
-import md.felicia.symphomybufferprep.entity.BufferRow;
-import md.felicia.symphomybufferprep.entity.Bufferstemp;
-import md.felicia.symphomybufferprep.entity.SymphonyFileStructure;
+import md.felicia.symphomybufferprep.entity.*;
 import md.felicia.symphomybufferprep.repository.AllMtsSkusMinBufferRepository;
 import md.felicia.symphomybufferprep.repository.BuffersTempRepository;
+import md.felicia.symphomybufferprep.repository.Ctxt2Repository;
 import md.felicia.symphomybufferprep.service.AllMtsSkusMinBufferService;
 import md.felicia.symphomybufferprep.service.BufferService;
+import md.felicia.symphomybufferprep.service.StockLocationService;
 import md.felicia.symphomybufferprep.service.SymphonyFileStructureService;
 //import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials="true")
@@ -47,19 +46,23 @@ public class BufferController {
     private final AllMtsSkusMinBufferService allMtsSkusMinBufferService;
     private final SymphonyFileStructureService symphonyFileStructureService;
     private final BuffersTempRepository buffersTempRepository;
+    private final StockLocationService stockLocationService;
+    private final Ctxt2Repository  ctxt2Repository;
     final String catalog = "CATALOG";
 
     final String COMPLETED_EVENT = "complete";
 
     @Autowired
     public BufferController(Environment env, BufferService bufferService, AllMtsSkusMinBufferService allMtsSkusMinBufferService,
-                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository, SymphonyFileStructureService symphonyFileStructureService, BuffersTempRepository buffersTempRepository) {
+                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository, SymphonyFileStructureService symphonyFileStructureService, BuffersTempRepository buffersTempRepository, StockLocationService stockLocationService, Ctxt2Repository ctxt2Repository) {
         this.env = env;
         this.bufferService = bufferService;
         this.allMtsSkusMinBufferService = allMtsSkusMinBufferService;
         this.allMtsSkusMinBufferRepository = allMtsSkusMinBufferRepository;
         this.symphonyFileStructureService = symphonyFileStructureService;
         this.buffersTempRepository = buffersTempRepository;
+        this.stockLocationService = stockLocationService;
+        this.ctxt2Repository = ctxt2Repository;
     }
 
     @RequestMapping(value = "/loadBuffer", method = RequestMethod.POST)
@@ -150,11 +153,13 @@ public class BufferController {
         return new ResponseEntity<>(sseEmitter, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/runCalculateBuffer", method = RequestMethod.POST)
+    @RequestMapping(value = "/runCalculateBuffer", method = RequestMethod.POST,consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SseEmitter> calcBuffer(@RequestBody RunCalculateBufferDTO runCalculateBufferDTO){
 
         final SseEmitter sseEmitter = new SseEmitter(0L);
         ExecutorService service  = Executors.newSingleThreadExecutor();
+
+        AtomicReference<String> message = new AtomicReference<>();
 
         service.execute(() -> {
             try{
@@ -162,30 +167,47 @@ public class BufferController {
                 String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
                 String fileName = env.getProperty("bufferPrep.output-folder") + "/Seasonality_CalcBuffer_"+ currentDate + ".txt";
 
-                sseEmitter.send(  dateFormat.format(new Date()) + " Read input data, and reformat for symphony proc");
+                message.set(dateFormat.format(new Date()) + " Read input data, and reformat for symphony proc");
+                sseEmitter.send(message);
+                log.info(message.get());
+
                 RunBufferDTO runBufferDTO = new RunBufferDTO(runCalculateBufferDTO);
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 String jsonStr;
 
-                sseEmitter.send(dateFormat.format(new Date()) + " Create JSON from input data and write value as string " );
+                message.set(dateFormat.format(new Date()) + " Create JSON from input data and write value as string " );
+                sseEmitter.send(message.get());
+                log.info(message.get());
+
                 jsonStr = objectMapper.writeValueAsString(runBufferDTO);
 
-                sseEmitter.send(dateFormat.format(new Date()) + " Call runner calculate buffer proc from Symphony database" );
-                buffersTempRepository.Runner_CALCULATE_BUFFER_JSON(jsonStr);
+                message.set(dateFormat.format(new Date()) + " Call runner calculate buffer proc from Symphony database" );
+                sseEmitter.send(message.get());
+                log.info(message.get());
 
-                sseEmitter.send(dateFormat.format(new Date()) + " Try to obtain result from Symphony database" );
+             //   buffersTempRepository.Runner_CALCULATE_BUFFER_JSON(jsonStr);
+
+                message.set(dateFormat.format(new Date()) + " Try to obtain result from Symphony database" );
+                sseEmitter.send(message.get());
+                log.info(message.get());
+
                 List<Bufferstemp> buffersTempList  = buffersTempRepository.findAll();
 
                 BufferedWriter writer= new BufferedWriter(new FileWriter(fileName));
-                sseEmitter.send(dateFormat.format(new Date()) + " Write result in Symphony seasonality output file");
+                message.set(dateFormat.format(new Date()) + " Write result in Symphony seasonality output file");
+                sseEmitter.send(message.get());
+                log.info(message.get());
 
                 for (Bufferstemp bufferstemp: buffersTempList){
                         writer.append(bufferstemp.toString());
                         writer.append("\n");
                 }
                 writer.close();
-                sseEmitter.send(dateFormat.format(new Date()) + " Write finished with success");
+
+                message.set(dateFormat.format(new Date()) + " Write finished with success");
+                sseEmitter.send(message.get());
+                log.info(message.get());
 
                 sseEmitter.send(SseEmitter
                         .event()
@@ -202,13 +224,39 @@ public class BufferController {
             }
 
         });
-
-
-
-
         return  new ResponseEntity<>(sseEmitter, HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/get-sl", method = RequestMethod.GET)
+    public ResponseEntity<?> getStockLocationsDTO(){
+        List<StockLocation> stockLocations = stockLocationService.getAllByDeleted(false);
+        List<StockLocationDTO> stockLocationsDTO = new ArrayList<>();
+
+        for (StockLocation stockLocation: stockLocations){
+            StockLocationDTO stockLocationDTO = new StockLocationDTO();
+            stockLocationDTO.setStockLocationDescription(stockLocation.getStockLocationDescription());
+            stockLocationDTO.setStockLocationName(stockLocation.getStockLocationName());
+            stockLocationDTO.setDeleted(stockLocation.isDeleted());
+
+            stockLocationsDTO.add(stockLocationDTO);
+        }
+        return ResponseEntity.ok(stockLocationsDTO);
+    }
+
+    @RequestMapping(value = "/get-ctxt2", method = RequestMethod.GET)
+    public ResponseEntity<?> getPolicies(){
+        List<Policy> policies = ctxt2Repository.findAll();
+        List<PolicyDTO> policyDTOs = new ArrayList<>();
+
+        for(Policy policy : policies ){
+            PolicyDTO policyDTO = new PolicyDTO();
+            policyDTO.setPolicy(policy.getPolicy());
+            policyDTOs.add(policyDTO);
+        }
+
+        return ResponseEntity.ok(policyDTOs);
+
+    }
 
     @RequestMapping(value = "/download-template", method = RequestMethod.GET)
     public ResponseEntity<?> downloadTemplate(@RequestParam("doc_name") String doc_name) throws IOException {

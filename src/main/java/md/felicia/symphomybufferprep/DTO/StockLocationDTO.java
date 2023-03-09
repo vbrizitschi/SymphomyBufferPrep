@@ -7,5 +7,6 @@ import lombok.NoArgsConstructor;
 public class StockLocationDTO {
     private String stockLocationName;
     private String stockLocationDescription;
+    private Boolean deleted;
 
 }

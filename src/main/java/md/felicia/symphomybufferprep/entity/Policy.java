@@ -12,7 +12,7 @@ import javax.persistence.Table;
 @Getter
 @Setter
 @Table(name = "policies", catalog ="Farma",schema = "dbo")
-public class Policies {
+public class Policy {
     @Id
     @Column(name = "policy")
     private String policy;

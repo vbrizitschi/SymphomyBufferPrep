@@ -20,4 +20,8 @@ public class StockLocationService {
     public List<StockLocation> getAll() {
         return stockLocationRepository.findAll();
     }
+
+    public List<StockLocation> getAllByDeleted(boolean isDeleted){
+        return stockLocationRepository.findAllByisDeleted(isDeleted);
+    }
 }
