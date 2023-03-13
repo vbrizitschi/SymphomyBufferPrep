@@ -195,10 +195,12 @@ var SSE = function (url, options) {
     this.xhr.addEventListener('error', this._onStreamFailure.bind(this));
     this.xhr.addEventListener('abort', this._onStreamAbort.bind(this));
     this.xhr.open(this.method, this.url);
-    for (var header in this.headers) {
+
+    for (let header in this.headers) {
       this.xhr.setRequestHeader(header, this.headers[header]);
     }
     this.xhr.withCredentials = this.withCredentials;
+    console.log('payload', this.payload);
     this.xhr.send(this.payload);
   };
 

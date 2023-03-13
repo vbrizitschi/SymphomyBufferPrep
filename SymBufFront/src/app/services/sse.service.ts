@@ -137,16 +137,12 @@ export class SseService {
   ): {
     payload: any;
     method: string;
-    headers: Headers;
+    headers: any;
   } {
 
     const token = this.storageService.getItem('token');
-    const headers: Headers = new Headers();
-    headers.append('Authorization', 'Bearer ' + token);
-    headers.append('Content-Type', 'application/json');
 
-    console.log('token', token);
-    console.log('headers', headers);
+   let headers = {'Authorization': 'Bearer ' + token};
 
     return {
       payload: data,

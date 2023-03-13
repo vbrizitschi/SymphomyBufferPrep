@@ -27,10 +27,10 @@ export class FileService {
 
   calculateBuffer(calculateBuffer: CalculateBuffer): Observable<any>{
     const formData: FormData = new FormData();
-    //formData.append('calculateBuffer', JSON.stringify(calculateBuffer));
-    console.log(calculateBuffer);
-    return this.sseService.getServerSentEventJSON(`${this.baseUrl}/documents/runCalculateBuffer`, calculateBuffer);
-    // this.http.post(`${this.baseUrl}/documents/runCalculateBuffer`, calculateBuffer)
+    formData.append('runCalculateBufferDTO', JSON.stringify(calculateBuffer));
+
+    return this.sseService.getServerSentEventJSON(`${this.baseUrl}/documents/runCalculateBuffer`, formData);
+
   }
 
   uploadMinBufferSSE(file:File): Observable<any> {

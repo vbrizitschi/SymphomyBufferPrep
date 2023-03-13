@@ -1,5 +1,6 @@
 package md.felicia.symphomybufferprep.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import md.felicia.symphomybufferprep.DTO.*;
@@ -12,6 +13,7 @@ import md.felicia.symphomybufferprep.service.BufferService;
 import md.felicia.symphomybufferprep.service.StockLocationService;
 import md.felicia.symphomybufferprep.service.SymphonyFileStructureService;
 //import org.jetbrains.annotations.NotNull;
+import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
@@ -153,10 +155,16 @@ public class BufferController {
         return new ResponseEntity<>(sseEmitter, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/runCalculateBuffer", method = RequestMethod.POST,consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<SseEmitter> calcBuffer(@RequestBody RunCalculateBufferDTO runCalculateBufferDTO){
+    @RequestMapping(value = "/runCalculateBuffer", method = RequestMethod.POST,consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SseEmitter> calcBuffer(@RequestParam("runCalculateBufferDTO") String calculateBufferDTO) throws JsonProcessingException {
 
-        final SseEmitter sseEmitter = new SseEmitter(0L);
+        ObjectMapper mapper = new ObjectMapper();
+
+        RunCalculateBufferDTO runCalculateBufferDTO = mapper.readValue(calculateBufferDTO,RunCalculateBufferDTO.class);
+
+        System.out.println("rur" + runCalculateBufferDTO);
+
+        final SseEmitter sseEmitter = new SseEmitter();
         ExecutorService service  = Executors.newSingleThreadExecutor();
 
         AtomicReference<String> message = new AtomicReference<>();
