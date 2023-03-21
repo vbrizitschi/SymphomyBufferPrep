@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials="true")
@@ -162,50 +163,38 @@ public class BufferController {
 
         RunCalculateBufferDTO runCalculateBufferDTO = mapper.readValue(calculateBufferDTO,RunCalculateBufferDTO.class);
 
-        System.out.println("rur" + runCalculateBufferDTO);
-
-        final SseEmitter sseEmitter = new SseEmitter();
+        final SseEmitter sseEmitter = new SseEmitter(0L);
         ExecutorService service  = Executors.newSingleThreadExecutor();
-
-        AtomicReference<String> message = new AtomicReference<>();
 
         service.execute(() -> {
             try{
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+
                 String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
                 String fileName = env.getProperty("bufferPrep.output-folder") + "/Seasonality_CalcBuffer_"+ currentDate + ".txt";
 
-                message.set(dateFormat.format(new Date()) + " Read input data, and reformat for symphony proc");
-                sseEmitter.send(message);
-                log.info(message.get());
+                sendMessage("Read input data, and reformat for symphony proc", sseEmitter);
+
+                readInputParams(runCalculateBufferDTO, sseEmitter);
 
                 RunBufferDTO runBufferDTO = new RunBufferDTO(runCalculateBufferDTO);
-
                 ObjectMapper objectMapper = new ObjectMapper();
                 String jsonStr;
 
-                message.set(dateFormat.format(new Date()) + " Create JSON from input data and write value as string " );
-                sseEmitter.send(message.get());
-                log.info(message.get());
+                sendMessage("Create JSON from input data and write value as string ", sseEmitter);
 
                 jsonStr = objectMapper.writeValueAsString(runBufferDTO);
 
-                message.set(dateFormat.format(new Date()) + " Call runner calculate buffer proc from Symphony database" );
-                sseEmitter.send(message.get());
-                log.info(message.get());
+                sendMessage("Call runner calculate buffer proc from Symphony database", sseEmitter);
 
-             //   buffersTempRepository.Runner_CALCULATE_BUFFER_JSON(jsonStr);
+                buffersTempRepository.Runner_CALCULATE_BUFFER_JSON(jsonStr);
 
-                message.set(dateFormat.format(new Date()) + " Try to obtain result from Symphony database" );
-                sseEmitter.send(message.get());
-                log.info(message.get());
+                sendMessage("Try to obtain result from Symphony database", sseEmitter);
 
                 List<Bufferstemp> buffersTempList  = buffersTempRepository.findAll();
 
                 BufferedWriter writer= new BufferedWriter(new FileWriter(fileName));
-                message.set(dateFormat.format(new Date()) + " Write result in Symphony seasonality output file");
-                sseEmitter.send(message.get());
-                log.info(message.get());
+
+                sendMessage("Write result in Symphony seasonality output file", sseEmitter);
 
                 for (Bufferstemp bufferstemp: buffersTempList){
                         writer.append(bufferstemp.toString());
@@ -213,9 +202,12 @@ public class BufferController {
                 }
                 writer.close();
 
-                message.set(dateFormat.format(new Date()) + " Write finished with success");
-                sseEmitter.send(message.get());
-                log.info(message.get());
+                sendMessage("Write file finished with success", sseEmitter);
+                sendMessage("Symphony data loading starts...", sseEmitter);
+
+//                doSymphonyProcess(env);
+
+                sendMessage("End running Symphony part with success...", sseEmitter);
 
                 sseEmitter.send(SseEmitter
                         .event()
@@ -223,8 +215,8 @@ public class BufferController {
                         .name(COMPLETED_EVENT)
                         .data(""));
 
-                sseEmitter.complete();
 
+                sseEmitter.complete();
 
             } catch (Exception e){
                 e.printStackTrace();
@@ -380,4 +372,50 @@ public class BufferController {
 
     }
 
+    private void randomDelay() {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void sendMessage(String message, SseEmitter sseEmitter) throws IOException {
+        AtomicReference<String> lvMessage = new AtomicReference<>();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+
+        lvMessage.set(dateFormat.format(new Date()) + ": " + message);
+
+        randomDelay();
+        log.info(lvMessage.get());
+        sseEmitter.send(lvMessage.get());
+    }
+
+    private void readInputParams(RunCalculateBufferDTO runCalculateBufferDTO, SseEmitter sseEmitter) throws IOException {
+        List<String> listOfMessage = new ArrayList<>();
+
+        listOfMessage.add(" - \t stockLocationName: " + runCalculateBufferDTO.getStockLocations().stream().map(StockLocationDTO::getStockLocationName).collect(Collectors.joining(",")));
+        listOfMessage.add(" - \t policy: " + runCalculateBufferDTO.getCtxt2().stream().map(PolicyDTO::getPolicy).collect(Collectors.joining(",")));
+        listOfMessage.add(" - \t rt: "+ runCalculateBufferDTO.getRt());
+        listOfMessage.add(" - \t minBuffer: "+ runCalculateBufferDTO.getMinBuffer());
+        listOfMessage.add(" - \t maxBuffer: " + runCalculateBufferDTO.getMaxBuffer());
+        listOfMessage.add(" - \t onlyOverstock: "+ runCalculateBufferDTO.getOnlyOverstock());
+        listOfMessage.add(" - \t periodForAverage: "+ runCalculateBufferDTO.getPeriodForAverage());
+        listOfMessage.add(" - \t periodForRec: "+ runCalculateBufferDTO.getPeriodForRec());
+        listOfMessage.add(" - \t spikeFactor: " + runCalculateBufferDTO.getSpikeFactor());
+        listOfMessage.add(" - \t increase: " + runCalculateBufferDTO.getIncrease());
+        listOfMessage.add(" - \t moreBuffer: " + runCalculateBufferDTO.getMoreBuffer());
+        listOfMessage.add(" - \t decrease: "+ runCalculateBufferDTO.getDecrease());
+        listOfMessage.add(" - \t lessBuffer: " + runCalculateBufferDTO.getLessBuffer());
+        listOfMessage.add(" - \t automatic: " + runCalculateBufferDTO.getAutomatic());
+        listOfMessage.add(" - \t bufferMulti: " + runCalculateBufferDTO.getBufferMulti());
+        listOfMessage.add(" - \t useAvailability: " +runCalculateBufferDTO.getUseAvailability());
+        listOfMessage.add(" - \t isInitialCalculation: " + runCalculateBufferDTO.getIsInitialCalculation());
+        listOfMessage.add(" - \t setAnalogsChildsBufferZero: " + runCalculateBufferDTO.getSetAnalogsChildsBufferZero());
+        listOfMessage.add(" - \t setAnalogsGroupBufferZero: " + runCalculateBufferDTO.getSetAnalogsGroupBufferZero());
+        listOfMessage.add(" - \t addDaysFromToday: " + runCalculateBufferDTO.getAddDaysFromToday());
+        for (String messages: listOfMessage){
+            sendMessage(messages, sseEmitter);
+        }
+    }
 }

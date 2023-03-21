@@ -60,3 +60,15 @@ div{
 .example-margin {
   margin: 10px;
 }
+
+.loader {
+  left: 50%;
+  margin-left: -4em;
+}
+
+.log{
+  white-space: pre;
+  color: limegreen;
+  align-items: center;
+  line-height: normal;
+}

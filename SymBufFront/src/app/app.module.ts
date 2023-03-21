@@ -32,6 +32,9 @@ import {MatCheckboxModule} from "@angular/material/checkbox";
 import { LoadMinBufferComponent } from './components/buffer/load-min-buffer/load-min-buffer.component';
 import { CalcBufferComponent } from './components/buffer/calc-buffer/calc-buffer.component';
 import {MatSelectModule} from "@angular/material/select";
+import {MatTabsModule} from "@angular/material/tabs";
+import { CalcBufferDialogComponent } from './components/buffer/calc-buffer-dialog/calc-buffer-dialog.component';
+import {MatDialog, MatDialogModule} from "@angular/material/dialog";
 
 @NgModule({
   declarations: [
@@ -42,7 +45,9 @@ import {MatSelectModule} from "@angular/material/select";
     LoginFormComponent,
     StocklocationsComponent,
     LoadMinBufferComponent,
-    CalcBufferComponent
+    CalcBufferComponent,
+    CalcBufferDialogComponent,
+
   ],
     imports: [
         BrowserModule,
@@ -68,7 +73,8 @@ import {MatSelectModule} from "@angular/material/select";
         MatButtonToggleModule,
         MatSlideToggleModule,
         MatCheckboxModule,
-        MatSelectModule
+        MatSelectModule,
+        MatTabsModule, MatDialogModule
     ],
   providers: [{
     provide: HTTP_INTERCEPTORS,

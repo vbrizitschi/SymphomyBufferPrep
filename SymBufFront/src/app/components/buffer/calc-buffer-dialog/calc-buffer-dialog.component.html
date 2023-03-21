@@ -1,0 +1,11 @@
+<h1  mat-dialog-title class="log" align="center">Результат выполнения</h1>
+<div mat-dialog-content ><mat-spinner [diameter]="50" color="accent" class="loader" *ngIf="isLoading"></mat-spinner></div>
+<div mat-dialog-actions>
+  <div class="container">
+    <br>
+    <p class="log" *ngFor="let s of status">{{s}}</p>
+    <div class="center">
+      <button *ngIf="!isLoading" mat-button mat-dialog-close class="mat-button">Close</button>
+    </div>
+  </div>
+</div>

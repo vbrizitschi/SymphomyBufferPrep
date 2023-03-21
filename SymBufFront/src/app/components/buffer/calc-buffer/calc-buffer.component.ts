@@ -6,6 +6,9 @@ import {StockLocation} from "../../../interfaces/stockLocation";
 import {Ctxt2} from "../../../interfaces/ctxt2";
 import {ThemePalette} from "@angular/material/core";
 import {BehaviorSubject, Observable} from "rxjs";
+import {MatDialog} from "@angular/material/dialog";
+import {Dialog} from "@angular/cdk/dialog";
+import {CalcBufferDialogComponent} from "../calc-buffer-dialog/calc-buffer-dialog.component";
 @Component({
   selector: 'app-calc-buffer',
   templateUrl: './calc-buffer.component.html',
@@ -30,8 +33,7 @@ export class CalcBufferComponent implements OnInit{
 
   isLoading: boolean = false;
 
-
-  constructor(private fileService: FileService, private _zone: NgZone){
+  constructor(private fileService: FileService, private _zone: NgZone, public dialog: MatDialog){
     this.event = this.createEventObservable();
   }
 
@@ -87,44 +89,48 @@ export class CalcBufferComponent implements OnInit{
   }
 
 
-  calculateBuffer(){
-
-    const newCalcBuffer : CalculateBuffer = {
-      addDaysFromToday:   this.calcBufferForm.get('addDaysFromToday')?.value,
-      automatic:          this.calcBufferForm.get('automatic')?.value,
-      bufferMulti:        this.calcBufferForm.get('bufferMulti')?.value,
-      ctxt2:              this.ctxt2s.value?.length !== 0 ? this.ctxt2s.value : [{ policy:'ALL'}],
-      decrease:           this.calcBufferForm.get('decrease')?.value,
-      increase:           this.calcBufferForm.get('increase')?.value,
+  paramCalcBuffer : CalculateBuffer |any;
+  initParam(){
+    this.paramCalcBuffer = {
+      addDaysFromToday: this.calcBufferForm.get('addDaysFromToday')?.value,
+      automatic: this.calcBufferForm.get('automatic')?.value,
+      bufferMulti: this.calcBufferForm.get('bufferMulti')?.value,
+      ctxt2: this.ctxt2s.value?.length !== 0 ? this.ctxt2s.value : [{policy: 'ALL'}],
+      decrease: this.calcBufferForm.get('decrease')?.value,
+      increase: this.calcBufferForm.get('increase')?.value,
       isInitialCalculation: this.isInitialCalculation.value,
-      lessBuffer:         this.calcBufferForm.get('lessBuffer')?.value,
-      maxBuffer:          this.calcBufferForm.get('maxBuffer')?.value,
-      minBuffer:          this.calcBufferForm.get('minBuffer')?.value,
-      moreBuffer:         this.calcBufferForm.get('moreBuffer')?.value,
-      onlyOverstock:      this.calcBufferForm.get('onlyOverstock')?.value,
-      periodForAverage:   this.calcBufferForm.get('periodForAverage')?.value,
-      periodForRec:       this.calcBufferForm.get('periodForRec')?.value,
-      rt:                 this.calcBufferForm.get('RT')?.value,
-      setAnalogsChildsBufferZero: this.setAnalogsChildsBufferZero.value ,
+      lessBuffer: this.calcBufferForm.get('lessBuffer')?.value,
+      maxBuffer: this.calcBufferForm.get('maxBuffer')?.value,
+      minBuffer: this.calcBufferForm.get('minBuffer')?.value,
+      moreBuffer: this.calcBufferForm.get('moreBuffer')?.value,
+      onlyOverstock: this.calcBufferForm.get('onlyOverstock')?.value,
+      periodForAverage: this.calcBufferForm.get('periodForAverage')?.value,
+      periodForRec: this.calcBufferForm.get('periodForRec')?.value,
+      rt: this.calcBufferForm.get('RT')?.value,
+      setAnalogsChildsBufferZero: this.setAnalogsChildsBufferZero.value,
       setAnalogsGroupBufferZero: this.setAnalogsGroupBufferZero.value,
       spikeFactor: this.calcBufferForm.get('spikeFactor')?.value,
-      stockLocations:   this.stockLocations.value?.length !==0 ? this.stockLocations.value : [{stockLocationName:'ALL', stockLocationDescription:'ALL'}],
+      stockLocations: this.stockLocations.value?.length !== 0 ? this.stockLocations.value : [{
+        stockLocationName: 'ALL',
+        stockLocationDescription: 'ALL'
+      }],
       useAvailability: this.useAvailability.value
     }
-    this.isLoading = true;
-    console.log(newCalcBuffer)
-    this.fileService.calculateBuffer(newCalcBuffer).subscribe(data =>{
-       console.log('data ', data);
-       // this.status.push(data)
+    // this.isLoading = true;
+    // this.status = []
+  //  console.log(newCalcBuffer)
+  //   this.fileService.calculateBuffer(newCalcBuffer).subscribe(data =>{
+  //      console.log('data ', data);
+  //       this.status.push(data)
+  //
+  //   }, error => {
+  //     console.error('error',error);
+  //     this.isLoading = false;
+  //     }, ()=>{
+  //     this.isLoading = false;
+  //   })
 
-    }, error => {
-      console.error('error',error);
-      this.isLoading = false;
-      }, ()=>{
-      this.isLoading = false;
-    })
-
-  }
+   }
 
 
   doSLToString(formControl: FormControl): String{
@@ -152,7 +158,15 @@ export class CalcBufferComponent implements OnInit{
   }
 
   doCalc() {
-     this.calculateBuffer()
+  this.initParam();
+
+      this.dialog.open(CalcBufferDialogComponent, { data: {'calcParam': this.paramCalcBuffer}, disableClose:true, height: "800px", width: "700px"});
+
+    // this.calculateBuffer()
   }
 
 }
+
+
+
+
