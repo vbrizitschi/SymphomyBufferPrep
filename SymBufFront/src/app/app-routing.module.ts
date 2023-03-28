@@ -11,7 +11,7 @@ import {CalcBufferComponent} from "./components/buffer/calc-buffer/calc-buffer.c
 
 const routes: Routes = [
   { path: 'load-buffer', component: LoadBufferComponent, canActivate: [AuthGuard] },
-  { path: 'calc-buffer', component: CalcBufferComponent},
+  { path: 'calc-buffer', component: CalcBufferComponent, canActivate: [AuthGuard]},
   { path: 'load-min-buffer', component: LoadMinBufferComponent, canActivate: [AuthGuard]},
   { path: 'calculation-logs', component: CalculationLogsComponent, canActivate: [AuthGuard]},
   { path: 'login', component: LoginFormComponent},

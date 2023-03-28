@@ -205,7 +205,7 @@ public class BufferController {
                 sendMessage("Write file finished with success", sseEmitter);
                 sendMessage("Symphony data loading starts...", sseEmitter);
 
-//                doSymphonyProcess(env);
+                doSymphonyProcess(env);
 
                 sendMessage("End running Symphony part with success...", sseEmitter);
 
