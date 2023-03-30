@@ -8,12 +8,12 @@ import md.felicia.symphomybufferprep.entity.*;
 import md.felicia.symphomybufferprep.repository.AllMtsSkusMinBufferRepository;
 import md.felicia.symphomybufferprep.repository.BuffersTempRepository;
 import md.felicia.symphomybufferprep.repository.Ctxt2Repository;
+import md.felicia.symphomybufferprep.repository.OperationLogRepository;
 import md.felicia.symphomybufferprep.service.AllMtsSkusMinBufferService;
 import md.felicia.symphomybufferprep.service.BufferService;
 import md.felicia.symphomybufferprep.service.StockLocationService;
 import md.felicia.symphomybufferprep.service.SymphonyFileStructureService;
 //import org.jetbrains.annotations.NotNull;
-import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
@@ -23,9 +23,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.nio.file.Files;
@@ -51,13 +55,18 @@ public class BufferController {
     private final BuffersTempRepository buffersTempRepository;
     private final StockLocationService stockLocationService;
     private final Ctxt2Repository  ctxt2Repository;
+    private final OperationLogRepository operationLogRepository;
+
+    private final HttpServletRequest request;
     final String catalog = "CATALOG";
 
     final String COMPLETED_EVENT = "complete";
 
+    private static String whoLogged = "";
+
     @Autowired
     public BufferController(Environment env, BufferService bufferService, AllMtsSkusMinBufferService allMtsSkusMinBufferService,
-                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository, SymphonyFileStructureService symphonyFileStructureService, BuffersTempRepository buffersTempRepository, StockLocationService stockLocationService, Ctxt2Repository ctxt2Repository) {
+                            AllMtsSkusMinBufferRepository allMtsSkusMinBufferRepository, SymphonyFileStructureService symphonyFileStructureService, BuffersTempRepository buffersTempRepository, StockLocationService stockLocationService, Ctxt2Repository ctxt2Repository, OperationLogRepository operationLogRepository,  HttpServletRequest request) {
         this.env = env;
         this.bufferService = bufferService;
         this.allMtsSkusMinBufferService = allMtsSkusMinBufferService;
@@ -66,6 +75,8 @@ public class BufferController {
         this.buffersTempRepository = buffersTempRepository;
         this.stockLocationService = stockLocationService;
         this.ctxt2Repository = ctxt2Repository;
+        this.operationLogRepository = operationLogRepository;
+        this.request = request;
     }
 
     @RequestMapping(value = "/loadBuffer", method = RequestMethod.POST)
@@ -159,6 +170,8 @@ public class BufferController {
     @RequestMapping(value = "/runCalculateBuffer", method = RequestMethod.POST,consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SseEmitter> calcBuffer(@RequestParam("runCalculateBufferDTO") String calculateBufferDTO) throws JsonProcessingException {
 
+        whoLogged = request.getRemoteUser();
+
         ObjectMapper mapper = new ObjectMapper();
 
         RunCalculateBufferDTO runCalculateBufferDTO = mapper.readValue(calculateBufferDTO,RunCalculateBufferDTO.class);
@@ -168,33 +181,35 @@ public class BufferController {
 
         service.execute(() -> {
             try{
-
+                String opType = "CalcBuffer";
                 String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
                 String fileName = env.getProperty("bufferPrep.output-folder") + "/Seasonality_CalcBuffer_"+ currentDate + ".txt";
 
-                sendMessage("Read input data, and reformat for symphony proc", sseEmitter);
 
-                readInputParams(runCalculateBufferDTO, sseEmitter);
+
+                sendMessage("Read input data, and reformat for symphony proc",opType, sseEmitter);
+
+                readInputParams(runCalculateBufferDTO, opType, sseEmitter);
 
                 RunBufferDTO runBufferDTO = new RunBufferDTO(runCalculateBufferDTO);
                 ObjectMapper objectMapper = new ObjectMapper();
                 String jsonStr;
 
-                sendMessage("Create JSON from input data and write value as string ", sseEmitter);
+                sendMessage("Create JSON from input data and write value as string ",opType, sseEmitter);
 
                 jsonStr = objectMapper.writeValueAsString(runBufferDTO);
 
-                sendMessage("Call runner calculate buffer proc from Symphony database", sseEmitter);
+                sendMessage("Call runner calculate buffer proc from Symphony database",opType, sseEmitter);
 
                 buffersTempRepository.Runner_CALCULATE_BUFFER_JSON(jsonStr);
 
-                sendMessage("Try to obtain result from Symphony database", sseEmitter);
+                sendMessage("Try to obtain result from Symphony database",opType, sseEmitter);
 
                 List<Bufferstemp> buffersTempList  = buffersTempRepository.findAll();
 
                 BufferedWriter writer= new BufferedWriter(new FileWriter(fileName));
 
-                sendMessage("Write result in Symphony seasonality output file", sseEmitter);
+                sendMessage("Write result in Symphony seasonality output file",opType, sseEmitter);
 
                 for (Bufferstemp bufferstemp: buffersTempList){
                         writer.append(bufferstemp.toString());
@@ -202,12 +217,12 @@ public class BufferController {
                 }
                 writer.close();
 
-                sendMessage("Write file finished with success", sseEmitter);
-                sendMessage("Symphony data loading starts...", sseEmitter);
+                sendMessage("Write file finished with success",opType, sseEmitter);
+                sendMessage("Symphony data loading starts...",opType, sseEmitter);
 
                 doSymphonyProcess(env);
 
-                sendMessage("End running Symphony part with success...", sseEmitter);
+                sendMessage("End running Symphony part with success...",opType, sseEmitter);
 
                 sseEmitter.send(SseEmitter
                         .event()
@@ -380,7 +395,7 @@ public class BufferController {
         }
     }
 
-    private void sendMessage(String message, SseEmitter sseEmitter) throws IOException {
+    private void sendMessage(String message,String operation ,SseEmitter sseEmitter) throws IOException {
         AtomicReference<String> lvMessage = new AtomicReference<>();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
@@ -389,9 +404,14 @@ public class BufferController {
         randomDelay();
         log.info(lvMessage.get());
         sseEmitter.send(lvMessage.get());
+
+
+        OperationLog operationLog = new OperationLog(operation,message, whoLogged);
+        operationLogRepository.save(operationLog);
+
     }
 
-    private void readInputParams(RunCalculateBufferDTO runCalculateBufferDTO, SseEmitter sseEmitter) throws IOException {
+    private void readInputParams(RunCalculateBufferDTO runCalculateBufferDTO, String opType, SseEmitter sseEmitter) throws IOException {
         List<String> listOfMessage = new ArrayList<>();
 
         listOfMessage.add(" - \t stockLocationName: " + runCalculateBufferDTO.getStockLocations().stream().map(StockLocationDTO::getStockLocationName).collect(Collectors.joining(",")));
@@ -415,7 +435,7 @@ public class BufferController {
         listOfMessage.add(" - \t setAnalogsGroupBufferZero: " + runCalculateBufferDTO.getSetAnalogsGroupBufferZero());
         listOfMessage.add(" - \t addDaysFromToday: " + runCalculateBufferDTO.getAddDaysFromToday());
         for (String messages: listOfMessage){
-            sendMessage(messages, sseEmitter);
+            sendMessage(messages, opType, sseEmitter);
         }
     }
 }

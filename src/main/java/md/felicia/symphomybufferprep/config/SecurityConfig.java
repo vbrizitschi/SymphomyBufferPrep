@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -66,6 +67,7 @@ public class SecurityConfig  {
         .and()
                 .addFilter(new JWTFilter(authenticationManager()));
             http.authenticationProvider(activeDirectoryLdapAuthenticationProvider());
+
         return http.build();
     }
 
@@ -79,7 +81,6 @@ public class SecurityConfig  {
         activeDirectoryLdapAuthenticationProvider.setUseAuthenticationRequestCredentials(true);
         activeDirectoryLdapAuthenticationProvider.setSearchFilter(AD_SEARCH_FILTER);
 
-
         return activeDirectoryLdapAuthenticationProvider;
     }
 
@@ -92,6 +93,8 @@ public class SecurityConfig  {
     public PasswordEncoder getPasswordEncoder(){
         return new BCryptPasswordEncoder();
     }
+
+
 
 }
 

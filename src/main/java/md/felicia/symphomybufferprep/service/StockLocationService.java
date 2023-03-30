@@ -25,7 +25,7 @@ public class StockLocationService {
     }
 
     public List<StockLocation> getAllByDeleted(boolean isDeleted){
-        return stockLocationRepository.findAllByisDeletedAAndAndStockLocationNameNotIn(   isDeleted
+        return stockLocationRepository.findAllByisDeletedAndAndStockLocationNameNotIn(   isDeleted
                                                                                         , List.of("1625")
                                                                                         , Sort.by(Sort.Order.by("stockLocationDescription")));
     }
