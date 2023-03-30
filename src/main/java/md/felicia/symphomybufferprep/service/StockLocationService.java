@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -23,6 +25,8 @@ public class StockLocationService {
     }
 
     public List<StockLocation> getAllByDeleted(boolean isDeleted){
-        return stockLocationRepository.findAllByisDeleted(isDeleted, Sort.by(Sort.Order.by("stockLocationDescription")));
+        return stockLocationRepository.findAllByisDeletedAAndAndStockLocationNameNotIn(   isDeleted
+                                                                                        , List.of("1625")
+                                                                                        , Sort.by(Sort.Order.by("stockLocationDescription")));
     }
 }

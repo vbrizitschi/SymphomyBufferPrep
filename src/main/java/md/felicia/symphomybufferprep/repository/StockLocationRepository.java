@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface StockLocationRepository extends JpaRepository<StockLocation, Long> {
-    List<StockLocation> findAllByisDeleted(boolean deleted, Sort sort);
+    List<StockLocation> findAllByisDeletedAAndAndStockLocationNameNotIn(boolean deleted, List<String> stockLocationName, Sort sort);
 }
