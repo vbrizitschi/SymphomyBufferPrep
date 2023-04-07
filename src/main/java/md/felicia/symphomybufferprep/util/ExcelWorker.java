@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import md.felicia.symphomybufferprep.DTO.MinBufferDTO;
 import md.felicia.symphomybufferprep.entity.BufferRow;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -91,21 +92,28 @@ public class ExcelWorker {
         try{
             XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
             log.info("Try to read first sheet from workbook");
+
             XSSFSheet sheet = workbook.getSheetAt(0);  //only one worksheet
 
             log.info("Processing lines in sheet");
 
+            outerLoop:
             for(int i = 1; i < sheet.getPhysicalNumberOfRows(); i++){
                 MinBufferDTO  minBufferDTO = new MinBufferDTO();
                 XSSFRow row = sheet.getRow(i);
 
+                innerLoop:
                 for (Cell currentCell : row) {
+                    if (currentCell.getCellType() != CellType.BLANK && currentCell.getCellType() == CellType.NUMERIC){
                     switch (currentCell.getAddress().getColumn()) {
                         case 0 -> minBufferDTO.setStockLocation(dataFormatter.formatCellValue(currentCell));
                         case 1 -> minBufferDTO.setSKUName(dataFormatter.formatCellValue(currentCell));
                         case 2 -> minBufferDTO.setMinBufferSize((int) currentCell.getNumericCellValue());
-                        default -> {
+                        default -> {}
                         }
+                    }else{
+                        log.info("Skip row number - " + row.getRowNum());
+                        continue outerLoop;
                     }
                 }
 

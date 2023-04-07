@@ -23,9 +23,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -119,12 +116,16 @@ public class BufferController {
     public ResponseEntity<SseEmitter> rebuildMinBuffer(@RequestParam("file") MultipartFile file
                                                      , @RequestParam(value = "changeMinBuffer", defaultValue = "0") String changeMinBuffer) throws IOException, InterruptedException {
 
+        whoLogged = request.getRemoteUser();
+
         opSseEmitter = new SseEmitter(0L);
 
         ExecutorService service  = Executors.newSingleThreadExecutor();
 
         service.execute(() -> {
             try {
+                opType = "LoadMinBuffer";
+
                 sendMessage("Read data from excel file");
                     Set<MinBufferDTO> minBuffers = bufferService.getAllMinBuffers(file);
                 sendMessage("Excel data received successfully");
@@ -160,7 +161,7 @@ public class BufferController {
     @RequestMapping(value = "/runCalculateBuffer", method = RequestMethod.POST,consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SseEmitter> calcBuffer(@RequestParam("runCalculateBufferDTO") String calculateBufferDTO) throws JsonProcessingException {
 
-        whoLogged = request.getRemoteUser();
+         whoLogged = request.getRemoteUser();
 
         ObjectMapper mapper = new ObjectMapper();
 
@@ -381,6 +382,8 @@ public class BufferController {
     }
 
     private void sendMessage(String message) throws IOException {
+
+
         AtomicReference<String> lvMessage = new AtomicReference<>();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
