@@ -59,10 +59,11 @@ public class BufferController {
 
     private final HttpServletRequest request;
     final String catalog = "CATALOG";
-
     final String COMPLETED_EVENT = "complete";
-
     private static String whoLogged = "";
+    String opType;
+    SseEmitter opSseEmitter ;
+
 
     @Autowired
     public BufferController(Environment env, BufferService bufferService, AllMtsSkusMinBufferService allMtsSkusMinBufferService,
@@ -118,53 +119,42 @@ public class BufferController {
     public ResponseEntity<SseEmitter> rebuildMinBuffer(@RequestParam("file") MultipartFile file
                                                      , @RequestParam(value = "changeMinBuffer", defaultValue = "0") String changeMinBuffer) throws IOException, InterruptedException {
 
-        final SseEmitter sseEmitter = new SseEmitter(0L);
+        opSseEmitter = new SseEmitter(0L);
+
         ExecutorService service  = Executors.newSingleThreadExecutor();
 
         service.execute(() -> {
             try {
-                sseEmitter.send("Read data from excel file");
+                sendMessage("Read data from excel file");
                     Set<MinBufferDTO> minBuffers = bufferService.getAllMinBuffers(file);
-                sseEmitter.send("Excel data received successfully");
-                sseEmitter.send("Start rebuilding Symphony data");
+                sendMessage("Excel data received successfully");
+                sendMessage("Start rebuilding Symphony data");
                     doBuildMinBufferFile(minBuffers, changeMinBuffer);
-                sseEmitter.send("Finished rebuilding, txt file was created");
-
-                log.info("Output file  successfully created");
-                ////############
-                Date date = new Date();
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-
-                log.info("Start running Symphony part - " + dateFormat.format(date));
-
+                sendMessage("Finished rebuilding, txt file was created");
                     updateSymphonyTechTable(0);
 
-                sseEmitter.send("Symphony data loading starts: " + dateFormat.format(date));
+                sendMessage("Symphony data loading starts");
 
                     doSymphonyProcess(env);
-
                     updateSymphonyTechTable(1);
+                sendMessage("Symphony loading is complete");
 
-                date = new Date();
-                log.info("End running Symphony part - " + dateFormat.format(date));
-                sseEmitter.send("Symphony loading is complete " + dateFormat.format(date));
-
-                sseEmitter.send(SseEmitter
+                opSseEmitter.send(SseEmitter
                         .event()
                         .id(String.valueOf(System.currentTimeMillis()))
                         .name(COMPLETED_EVENT)
                         .data(""));
 
-                sseEmitter.complete();
+                opSseEmitter.complete();
             } catch (Exception e) {
                 e.printStackTrace();
-                sseEmitter.completeWithError(e);
+                opSseEmitter.completeWithError(e);
             } finally {
                 updateSymphonyTechTable(1);
             }
         });
 
-        return new ResponseEntity<>(sseEmitter, HttpStatus.OK);
+        return new ResponseEntity<>(opSseEmitter, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/runCalculateBuffer", method = RequestMethod.POST,consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -176,70 +166,65 @@ public class BufferController {
 
         RunCalculateBufferDTO runCalculateBufferDTO = mapper.readValue(calculateBufferDTO,RunCalculateBufferDTO.class);
 
-        final SseEmitter sseEmitter = new SseEmitter(0L);
+        opSseEmitter = new SseEmitter(0L);
         ExecutorService service  = Executors.newSingleThreadExecutor();
 
         service.execute(() -> {
             try{
-                String opType = "CalcBuffer";
+                opType = "CalcBuffer";
                 String currentDate = new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
                 String fileName = env.getProperty("bufferPrep.output-folder") + "/Seasonality_CalcBuffer_"+ currentDate + ".txt";
 
 
+                sendMessage("Read input data, and reformat for symphony proc");
 
-                sendMessage("Read input data, and reformat for symphony proc",opType, sseEmitter);
-
-                readInputParams(runCalculateBufferDTO, opType, sseEmitter);
+                readInputParams(runCalculateBufferDTO);
 
                 RunBufferDTO runBufferDTO = new RunBufferDTO(runCalculateBufferDTO);
                 ObjectMapper objectMapper = new ObjectMapper();
                 String jsonStr;
 
-                sendMessage("Create JSON from input data and write value as string ",opType, sseEmitter);
+                sendMessage("Create JSON from input data and write value as string ");
 
                 jsonStr = objectMapper.writeValueAsString(runBufferDTO);
 
-                sendMessage("Call runner calculate buffer proc from Symphony database",opType, sseEmitter);
+                sendMessage("Call runner calculate buffer proc from Symphony database");
 
                 buffersTempRepository.Runner_CALCULATE_BUFFER_JSON(jsonStr);
 
-                sendMessage("Try to obtain result from Symphony database",opType, sseEmitter);
-
+                sendMessage("Try to obtain result from Symphony database");
                 List<Bufferstemp> buffersTempList  = buffersTempRepository.findAll();
-
                 BufferedWriter writer= new BufferedWriter(new FileWriter(fileName));
 
-                sendMessage("Write result in Symphony seasonality output file",opType, sseEmitter);
-
+                sendMessage("Write result in Symphony seasonality output file");
                 for (Bufferstemp bufferstemp: buffersTempList){
                         writer.append(bufferstemp.toString());
                         writer.append("\n");
                 }
                 writer.close();
 
-                sendMessage("Write file finished with success",opType, sseEmitter);
-                sendMessage("Symphony data loading starts...",opType, sseEmitter);
+                sendMessage("Write file finished with success");
+                sendMessage("Symphony data loading starts...");
 
                 doSymphonyProcess(env);
 
-                sendMessage("End running Symphony part with success...",opType, sseEmitter);
+                sendMessage("End running Symphony part with success...");
 
-                sseEmitter.send(SseEmitter
+                opSseEmitter.send(SseEmitter
                         .event()
                         .id(String.valueOf(System.currentTimeMillis()))
                         .name(COMPLETED_EVENT)
                         .data(""));
 
-
-                sseEmitter.complete();
+                opSseEmitter.complete();
 
             } catch (Exception e){
                 e.printStackTrace();
-                sseEmitter.completeWithError(e);
+                opSseEmitter.completeWithError(e);
             }
 
         });
-        return  new ResponseEntity<>(sseEmitter, HttpStatus.OK);
+        return  new ResponseEntity<>(opSseEmitter, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/get-sl", method = RequestMethod.GET)
@@ -395,7 +380,7 @@ public class BufferController {
         }
     }
 
-    private void sendMessage(String message,String operation ,SseEmitter sseEmitter) throws IOException {
+    private void sendMessage(String message) throws IOException {
         AtomicReference<String> lvMessage = new AtomicReference<>();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
@@ -403,15 +388,14 @@ public class BufferController {
 
         randomDelay();
         log.info(lvMessage.get());
-        sseEmitter.send(lvMessage.get());
+        opSseEmitter.send(lvMessage.get());
 
-
-        OperationLog operationLog = new OperationLog(operation,message, whoLogged);
+        OperationLog operationLog = new OperationLog(opType,message, whoLogged);
         operationLogRepository.save(operationLog);
 
     }
 
-    private void readInputParams(RunCalculateBufferDTO runCalculateBufferDTO, String opType, SseEmitter sseEmitter) throws IOException {
+    private void readInputParams(RunCalculateBufferDTO runCalculateBufferDTO) throws IOException {
         List<String> listOfMessage = new ArrayList<>();
 
         listOfMessage.add(" - \t stockLocationName: " + runCalculateBufferDTO.getStockLocations().stream().map(StockLocationDTO::getStockLocationName).collect(Collectors.joining(",")));
@@ -435,7 +419,7 @@ public class BufferController {
         listOfMessage.add(" - \t setAnalogsGroupBufferZero: " + runCalculateBufferDTO.getSetAnalogsGroupBufferZero());
         listOfMessage.add(" - \t addDaysFromToday: " + runCalculateBufferDTO.getAddDaysFromToday());
         for (String messages: listOfMessage){
-            sendMessage(messages, opType, sseEmitter);
+            sendMessage(messages);
         }
     }
 }
