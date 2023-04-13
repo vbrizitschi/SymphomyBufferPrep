@@ -342,9 +342,9 @@ public class BufferController {
                 // minOutputBuffer.setTvc(tvc); //9
                 minOutputBuffer.setMinReplenishment(mtsSkusCatalog.getMinimumReplenishment()); //11
                 minOutputBuffer.setReplenishmentMultip(mtsSkusCatalog.getMultiplications()); //12
-                if (Objects.equals(changeMinBuffer, "1")) {
+          //      if (Objects.equals(changeMinBuffer, "1")) {
                     minOutputBuffer.setMinimumBufferSize(minBuffer.getMinBufferSize()); //48
-                }
+          //      }
 
                 writer.append(minOutputBuffer.toString());
                 writer.append("\n");
