@@ -40,13 +40,13 @@ export class CalcBufferComponent implements OnInit{
   calcBufferForm : FormGroup = new FormGroup({
     addDaysFromToday: new FormControl(0, [Validators.pattern(this.numberRegEx), Validators.required]),
     automatic: new FormControl(0, [Validators.pattern(this.numberRegEx), Validators.required]),
-    bufferMulti: new FormControl(1.3, [Validators.pattern(this.decimalRegEx), Validators.required]),
+    bufferMulti: new FormControl(1, [Validators.pattern(this.decimalRegEx), Validators.required]),
     decrease : new FormControl(1, [Validators.pattern(this.numberRegEx), Validators.required]),
     increase : new FormControl(1, [Validators.pattern(this.numberRegEx), Validators.required]),
     isInitialCalculation: new FormControl('', Validators.pattern(this.numberRegEx)),
     lessBuffer: new FormControl(0.8, [Validators.pattern(this.decimalRegEx), Validators.required]),
     maxBuffer: new FormControl(10000, [Validators.pattern(this.numberRegEx), Validators.required]),
-    minBuffer: new FormControl(0, [Validators.pattern(this.numberRegEx), Validators.required]),
+    minBuffer: new FormControl(1, [Validators.pattern(this.numberRegEx), Validators.required]),
     moreBuffer: new FormControl(1.4, [Validators.pattern(this.decimalRegEx), Validators.required]),
     onlyOverstock: new FormControl(0, [Validators.pattern(this.numberRegEx), Validators.required]),
     periodForAverage: new FormControl(30, [Validators.pattern(this.numberRegEx), Validators.required]),
@@ -54,7 +54,7 @@ export class CalcBufferComponent implements OnInit{
     RT : new FormControl(0, [Validators.pattern(this.numberRegEx), Validators.required]),
     setAnalogsChildsBufferZero: new FormControl('', Validators.pattern(this.numberRegEx)),
     setAnalogsGroupBufferZero: new FormControl('', Validators.pattern(this.numberRegEx)),
-    spikeFactor: new FormControl(2.5, [Validators.pattern(this.decimalRegEx), Validators.required]),
+    spikeFactor: new FormControl(2.3, [Validators.pattern(this.decimalRegEx), Validators.required]),
     useAvailability: new FormControl('', Validators.pattern(this.numberRegEx))
   })
   stockLocations = new FormControl('');
